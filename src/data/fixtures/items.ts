@@ -1,0 +1,58 @@
+import type { FashionItem } from '@/types/content'
+
+export const items: FashionItem[] = [
+  {
+    slug: 'so-mi-trang',
+    name: 'Sơ mi trắng',
+    category: 'tops',
+    excerpt: 'Món nền của gần như mọi outfit chỉn chu. Khác biệt nằm ở dáng cổ và độ đứng của vải.',
+    image: null,
+    colorSlugs: ['kem'],
+    styleSlugs: ['modern-classic', 'minimalist', 'quiet-luxury'],
+  },
+  {
+    slug: 'ao-lua',
+    name: 'Áo lụa',
+    category: 'tops',
+    excerpt: 'Độ rủ và ánh sáng trên bề mặt làm outfit mềm lại mà không cần thêm chi tiết nào.',
+    image: null,
+    colorSlugs: ['kem', 'burgundy'],
+    styleSlugs: ['soft-feminine', 'quiet-luxury'],
+  },
+  {
+    slug: 'quan-wide-leg-chocolate',
+    name: 'Quần wide-leg chocolate',
+    category: 'bottoms',
+    excerpt: 'Ống rộng kéo dáng và màu chocolate ấm hơn đen — dễ mặc hơn vẻ ngoài của nó.',
+    image: null,
+    colorSlugs: ['chocolate'],
+    styleSlugs: ['modern-classic', 'casual-chic'],
+  },
+  {
+    slug: 'chan-vay-midi',
+    name: 'Chân váy midi',
+    category: 'bottoms',
+    excerpt: 'Độ dài qua bắp chân là chỗ cân bằng giữa thoải mái và trang trọng.',
+    image: null,
+    colorSlugs: ['be-xam', 'den'],
+    styleSlugs: ['soft-feminine', 'modern-classic'],
+  },
+  {
+    slug: 'blazer',
+    name: 'Blazer',
+    category: 'outerwear',
+    excerpt: 'Thêm cấu trúc cho vai và biến một outfit thường ngày thành outfit đi làm.',
+    image: null,
+    colorSlugs: ['den', 'chocolate'],
+    styleSlugs: ['modern-classic', 'minimalist'],
+  },
+  {
+    slug: 'loafer',
+    name: 'Loafer',
+    category: 'accessories',
+    excerpt: 'Phẳng, kín mũi, đứng dáng — đôi giày làm outfit nghiêm túc hơn mà vẫn đi bộ được.',
+    image: null,
+    colorSlugs: ['chocolate', 'den'],
+    styleSlugs: ['modern-classic', 'casual-chic', 'quiet-luxury'],
+  },
+]
