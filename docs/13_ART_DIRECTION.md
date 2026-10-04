@@ -277,7 +277,14 @@ where `<kind>` is one of `hero`, `styles`, `items`, `outfits`, `stories`, or `og
 fixture `image` fields at these paths, so the slug must match character for
 character — no translation, no reformatting, no trailing variation.
 
-Slugs confirmed against the fixtures as of this writing:
+Slugs confirmed against the fixtures as of this writing — this list is the M0
+fixture inventory, not the full 34-image generation budget. It covers 6 items, 5
+styles, 2 outfits, and 3 stories because that is all the current fixture set
+contains; the catalog expansion that reaches 15 items and 10 outfits (the sizes that
+add up to the 34 generated photographs in §1/§6) lands in a later milestone. When
+that expansion adds fixture entries, extend this list with their slugs the same
+way — the `<kind>/<slug>.jpg` convention above is the durable part, this list is a
+snapshot of it.
 
 - **items** (`src/data/fixtures/items.ts`): `so-mi-trang`, `ao-lua`,
   `quan-wide-leg-chocolate`, `chan-vay-midi`, `blazer`, `loafer`
