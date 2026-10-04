@@ -9,14 +9,6 @@ export function MobileNavigation() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
-  // Close the menu on route change. Resetting local UI state (an open
-  // overlay) when the route changes is the intended use case here; there
-  // is no external-system subscription to model this as instead.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setOpen(false)
-  }, [pathname])
-
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -54,6 +46,7 @@ export function MobileNavigation() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  onClick={() => setOpen(false)}
                   className={`font-display text-3xl ${
                     isActive(pathname, item.href) ? 'text-accent' : 'text-foreground'
                   }`}
