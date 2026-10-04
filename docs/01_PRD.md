@@ -1,5 +1,9 @@
 # 01 — Product Requirements Document
 
+> **Superseded in part by** `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`
+> (ADR-010). Read the spec before following this document. The Authentication section
+> below no longer requires auth to save.
+
 ## MVP modules
 
 ### 1. Home

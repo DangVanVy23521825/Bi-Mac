@@ -1,5 +1,9 @@
 # 0001 — Milestone 0: Foundation
 
+> **SUPERSEDED (2026-10-04).** This plan assumed the `docs/09` milestone order and a
+> mock-first AI Stylist. Replaced by
+> `docs/superpowers/plans/2026-10-04-m0-foundation-m1-art-direction.md`.
+
 Status: proposed (not yet implemented)
 Source: `docs/09_MVP_ROADMAP.md` (Milestone 0), `docs/12_TASK_BACKLOG.md` (P0),
 `PROMPT_INIT_CLAUDE.md`

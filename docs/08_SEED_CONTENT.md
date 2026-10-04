@@ -1,5 +1,8 @@
 # 08 — Seed Content Plan
 
+> **Superseded in part by** `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`
+> (ADR-014). Read the spec before following this document.
+
 The MVP should look useful without requiring hundreds of records.
 
 ## Target initial volume

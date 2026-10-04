@@ -1,5 +1,8 @@
 # 00 — Project Context
 
+> **Superseded in part by** `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`
+> (ADR-009). Read the spec before following this document.
+
 ## Brand
 
 **Bí Mặc**

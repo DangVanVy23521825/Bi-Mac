@@ -1,5 +1,8 @@
 # 05 — AI Stylist Specification
 
+> **Superseded in part by** `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`
+> (ADR-011, ADR-012). Read the spec before following this document.
+
 ## Objective
 
 Provide personalized styling suggestions that combine:

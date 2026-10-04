@@ -1,5 +1,9 @@
 # 07 — Security & Privacy
 
+> **Superseded in part by** `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`
+> (ADR-012). Read the spec before following this document. User photos are not stored
+> anywhere, and there is no storage bucket in v1.
+
 ## Baseline
 
 Security and privacy requirements are product requirements, especially because AI Stylist may accept user photos.

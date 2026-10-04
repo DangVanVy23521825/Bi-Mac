@@ -1,5 +1,8 @@
 # 09 — MVP Roadmap
 
+> **Superseded in part by** `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`
+> (ADR-015). Read the spec before following this document.
+
 ## Milestone 0 — Foundation
 
 Goal: a runnable, visually credible Bí Mặc shell.
