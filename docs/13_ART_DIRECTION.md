@@ -1,11 +1,12 @@
 # 13. Art Direction Spec
 
-This document is the operating procedure for producing Bí Mặc's 35 photographs. There
-is no photography yet — every image slot in the running app currently renders a
-token-tinted placeholder (`EditorialImage` with `src: null`). This spec exists so that
-when those 35 images get made, by hand, in ChatGPT, over several sessions and possibly
-by more than one person, they look like they came from one shoot rather than 35
-unrelated pictures.
+This document is the operating procedure for producing Bí Mặc's 35 image files: 34
+photographs made by hand in ChatGPT, plus 1 OG share-card crop derived from the hero
+image rather than generated separately (see §8). There is no photography yet — every
+image slot in the running app currently renders a token-tinted placeholder
+(`EditorialImage` with `src: null`). This spec exists so that when those 34
+photographs get made, over several sessions and possibly by more than one person,
+they look like they came from one shoot rather than 34 unrelated pictures.
 
 It is not a mood board. Every rule below is written so that a different person
 following it lands on a visually matching result. If a sentence could be satisfied by
@@ -22,8 +23,10 @@ this file is wrong.
 
 ## 1. Absolute rules
 
-These apply to every one of the 35 images without exception. None of them are
-negotiable per-shot.
+These apply to every one of the 34 generated images without exception; none of them
+are negotiable per-shot. The 35th file — the OG crop — is not a separate generation
+(see §8), so it inherits these rules automatically from the hero image it is cropped
+from rather than needing them re-applied.
 
 1. **No identifiable face.** No image shows a face that a viewer could recognize or
    describe. Acceptable framings: cropped at or below the shoulders (head not in
@@ -149,8 +152,8 @@ post-processing step in this workflow.
 ## 6. Reusable prompt block
 
 Paste this exact block, verbatim, as the first message in every new ChatGPT thread,
-before any image request. It is the single artifact that keeps 35 separate generations
-looking like one shoot. Do not edit it per-shot — if a shot needs something this block
+before any image request. It is the single artifact that keeps all 34 separate
+generations looking like one shoot. Do not edit it per-shot — if a shot needs something this block
 doesn't cover, that detail belongs in the per-image prompt (§7), not in an edited copy
 of this block.
 
@@ -268,9 +271,10 @@ Save every delivered image as:
 public/images/<kind>/<slug>.jpg
 ```
 
-where `<kind>` is one of `hero`, `styles`, `items`, `outfits`, `stories`, and `<slug>`
-is the exact slug used in the matching fixture file under `src/data/fixtures/`. A later
-task points fixture `image` fields at these paths, so the slug must match character for
+where `<kind>` is one of `hero`, `styles`, `items`, `outfits`, `stories`, or `og`, and
+`<slug>` is the exact slug used in the matching fixture file under
+`src/data/fixtures/` (the `og` kind has no fixture — see below). A later task points
+fixture `image` fields at these paths, so the slug must match character for
 character — no translation, no reformatting, no trailing variation.
 
 Slugs confirmed against the fixtures as of this writing:
@@ -291,15 +295,25 @@ Slugs confirmed against the fixtures as of this writing:
   slug does not yet exist in a fixture file — it is wired by a later task — but the
   path is fixed now so that task has a stable target.
 
+**The OG image is not a 35th generation — it is a crop of the hero.** Social-share
+cards use a 1200×630 (1.91:1) frame, which is close enough to the hero's 3:2 (1.5:1)
+that it crops cleanly without a second ChatGPT session. After the hero image
+(`public/images/hero/thu-2026.jpg`) is generated and approved, crop it to exactly
+1200×630 and save the result separately at `public/images/og/thu-2026.jpg`. This file
+is the 35th of the 35 total files this spec accounts for, but it costs zero additional
+generations — the budget is 34 generated photographs plus this 1 derived crop.
+
 ---
 
 ## 9. Workflow and prompt log
 
 **Threading.** One ChatGPT thread per set (items, styles, outfits, stories, hero — five
-threads, not 35). Paste the §6 block as the first message in each thread and wait for
+threads, not 34). Paste the §6 block as the first message in each thread and wait for
 confirmation before sending the first image prompt. Keeping each kind in its own thread
 means every image in that thread shares the same conversation-level context, which is
-what keeps, say, all six items looking like the same product shoot.
+what keeps, say, all six items looking like the same product shoot. The OG card is not
+a sixth thread: it is produced by cropping the already-generated hero image (§8), not
+by a new ChatGPT generation, so it needs no thread of its own.
 
 **Order within the items/outfits relationship.** Generate every item image before
 generating any outfit image that depends on it. When generating an outfit shot, attach
