@@ -108,11 +108,18 @@ Chèn dưới tiêu đề `docs/plans/0001-foundation.md`:
 
 - [ ] **Step 4: Kiểm**
 
-Run: `grep -c "Đã được sửa bởi" docs/*.md`
-Expected: `6`
+Dòng trỏ và ADR viết bằng **tiếng Anh** để khớp `docs/11_DECISIONS.md` (đã có ADR-001..005
+tiếng Anh) và khớp toàn bộ `docs/00`..`docs/12`. `CLAUDE.md` chỉ bắt buộc tiếng Việt cho
+ngôn ngữ sản phẩm.
 
-Run: `grep -c "^## ADR-" docs/11_DECISIONS.md`
+Run: `grep -lc "Superseded in part by" docs/*.md | wc -l`
+Expected: `6` — và đúng 6 file `00, 01, 05, 07, 08, 09`
+
+Run: `grep -c "^## ADR-0" docs/11_DECISIONS.md`
 Expected: `15`
+
+Lưu ý: dùng `^## ADR-0` chứ không phải `^## ADR-`. Mục `## Template for new decisions`
+chứa ví dụ `## ADR-NNN — Title`, nên pattern rộng trả về 16 và làm tưởng là lỗi.
 
 - [ ] **Step 5: Commit**
 
