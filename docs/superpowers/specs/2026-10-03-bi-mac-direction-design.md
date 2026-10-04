@@ -212,7 +212,7 @@ Chi tiết đầy đủ sẽ nằm ở `docs/13_ART_DIRECTION.md` (viết ở M1
 
 - **Một spec duy nhất** dán vào mọi prompt: ánh sáng, nền, khẩu độ, góc crop, palette
   Warm Ivory / Burgundy / Chocolate / Taupe, tông da và kiểu người mẫu. Đây là thứ biến
-  30 ảnh rời thành một bộ.
+  35 ảnh rời thành một bộ.
 - **Không có mặt nhận diện được trong khung.** Crop từ vai xuống, chụp sau lưng, nghiêng,
   hoặc mặt ra ngoài khung. Lý do chính: gương mặt AI là dấu hiệu lộ số một. Tác dụng phụ:
   giống editorial fashion thật hơn.
