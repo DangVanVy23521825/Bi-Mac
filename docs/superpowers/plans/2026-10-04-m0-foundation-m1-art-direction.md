@@ -135,10 +135,16 @@ git commit -m "docs: record ADR-006..015 and flag superseded sections"
 - [ ] **Step 1: Scaffold vào thư mục gốc**
 
 ```bash
-pnpm create next-app@latest . --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --no-turbopack
+pnpm create next-app@latest . --ts --tailwind --eslint --app --src-dir --import-alias "@/*"
 ```
 
-Nó sẽ hỏi về file đang có — giữ `CLAUDE.md`, `README.md`, `docs/`, `PROMPT_INIT_CLAUDE.md`.
+Không thêm cờ nào ngoài danh sách trên — cờ không tồn tại làm create-next-app dừng.
+Nếu nó vẫn hỏi tương tác thì trả lời: TypeScript **yes**, ESLint **yes**, Tailwind
+**yes**, `src/` **yes**, App Router **yes**, import alias **`@/*`**, Turbopack **theo
+mặc định nó đề xuất**.
+
+Nó sẽ hỏi về file đang có — giữ `CLAUDE.md`, `README.md`, `docs/`, `PROMPT_INIT_CLAUDE.md`,
+`.gitignore`.
 
 Ghi lại version Next và Tailwind thật vào plan log; Task 3 phân nhánh theo Tailwind v3 hay v4.
 
@@ -203,11 +209,12 @@ import '@testing-library/jest-dom/vitest'
 
 - [ ] **Step 7: Xoá boilerplate**
 
-Rút `src/app/page.tsx` về:
+Rút `src/app/page.tsx` về. **Không dùng `<main>` ở đây** — Task 6 sẽ đặt `<main>` vào
+layout, và `<main>` lồng `<main>` là HTML không hợp lệ:
 
 ```tsx
 export default function Home() {
-  return <main />
+  return <div />
 }
 ```
 
@@ -323,10 +330,10 @@ Khi đó: đổi sang `Playfair_Display` (đã có subset `vietnamese`), đổi 
 ```tsx
 export default function Home() {
   return (
-    <main className="p-10 space-y-6">
+    <div className="p-10 space-y-6">
       <h1 className="font-display text-6xl">Tủ đồ của tôi — Phối theo style</h1>
       <p className="font-body text-base">AI phối đồ · Chocolate Brown: từ màu khó mặc đến neutral mới</p>
-    </main>
+    </div>
   )
 }
 ```
@@ -1132,7 +1139,6 @@ Shell phải là trang thật có nội dung thật, **không phải thẻ "comi
 - [ ] **Step 1: `src/app/wardrobe/page.tsx`**
 
 ```tsx
-import Link from 'next/link'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 
 const CATEGORIES = [
