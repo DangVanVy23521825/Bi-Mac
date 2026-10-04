@@ -272,8 +272,14 @@ Nhờ vậy đổi vendor chỉ sửa một thư mục, và test được ground
 thì, không chi phí. Chỉ `/stylist` dynamic. `next/image` trỏ file local trong `public/`,
 không cần allowlist domain.
 
-**Client component chỉ ở bốn chỗ:** mobile nav, questionnaire + chọn ảnh, kết quả
-stylist (streaming), nút lưu. Còn lại Server Component.
+**Client component chỉ ở năm chỗ:** site header (cần `usePathname` cho trạng thái
+active), mobile nav, questionnaire + chọn ảnh, kết quả stylist (streaming), nút lưu. Còn
+lại Server Component.
+
+Header là client vì `MobileNavigation` đã là client và là con của nó — nhánh đó hydrate dù
+sao, nên đẩy header về server chỉ tiết kiệm việc hydrate một wordmark và một div bọc, không
+đủ bù một file cùng một lớp gián tiếp. Luật ở đây nhắm vào chuyện đừng biến cả một *trang*
+thành client vì một control nhỏ; header không phải một trang.
 
 **Closet không auth.** Store nhỏ có type, chỉ lưu *slug* vào `localStorage`, đọc trong
 effect để tránh lệch hydration. `src/lib/supabase/` ở lại như seam có tài liệu — và đó

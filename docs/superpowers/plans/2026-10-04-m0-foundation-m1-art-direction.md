@@ -37,7 +37,7 @@
 | `src/components/editorial/*.tsx` | Primitive nội dung: hero, tile, look, swatch, card, CTA |
 | `src/components/layout/nav.ts` | Cấu hình nav + `isActive()` — logic thuần, test được |
 | `src/components/layout/SiteHeader.tsx` | Header server component |
-| `src/components/layout/MobileNavigation.tsx` | Client component duy nhất trong M0 |
+| `src/components/layout/MobileNavigation.tsx` | Client component: overlay, Escape, khoá scroll |
 | `src/components/layout/Footer.tsx` | Footer + dòng công bố ảnh AI |
 | `src/app/page.tsx` | Trang chủ: chỉ gọi repository rồi compose primitive |
 | `src/app/{wardrobe,styles,stylist,closet}/page.tsx` | Route shell |
@@ -944,7 +944,7 @@ Expected: PASS, 4 test.
 
 - [ ] **Step 5: Viết `src/components/layout/MobileNavigation.tsx`**
 
-Client component duy nhất của M0. Cần Escape để đóng, khoá scroll khi mở, và `aria-expanded`.
+Client component. Cần Escape để đóng, khoá scroll khi mở, và `aria-expanded`.
 
 ```tsx
 'use client'
@@ -1016,7 +1016,14 @@ export function MobileNavigation() {
 
 - [ ] **Step 6: Viết `src/components/layout/SiteHeader.tsx`**
 
-Header là client component vì cần `usePathname` cho trạng thái active — nhưng nó không giữ state nào, và đây là ngoại lệ duy nhất.
+Header là client component vì cần `usePathname` cho trạng thái active. Nó không giữ state nào.
+
+Lý do không tách `DesktopNavigation` riêng để giữ header ở server: `MobileNavigation` đã là
+client và là con của header, nên nhánh đó hydrate dù sao; đẩy header về server chỉ tiết kiệm
+việc hydrate một `Link` wordmark và một div bọc. Thêm một file cùng một lớp gián tiếp để đổi
+lấy chừng đó là lỗ. Luật của `docs/03` nhắm vào chuyện "đừng biến cả một trang thành client
+chỉ vì một control nhỏ cần state" — header không phải một trang, và `children` đi qua ranh
+giới client vẫn render ở server.
 
 ```tsx
 'use client'
