@@ -1696,7 +1696,9 @@ Cấu trúc bắt buộc, mỗi mục viết thành câu cụ thể chứ không
 1. **Luật tuyệt đối** — không mặt nhận diện được trong khung (crop từ vai xuống, sau lưng, nghiêng, hoặc mặt ra ngoài khung); chỉ 5 màu trong palette; không logo, không chữ trong ảnh; không trang sức lấp lánh; không hậu cảnh đô thị ồn.
 2. **Ánh sáng** — một nguồn sáng mềm từ bên, không đèn flash trực diện, bóng đổ nhẹ và có hướng rõ.
 3. **Hậu cảnh** — tường/vải phẳng tông Warm Ivory hoặc Soft Taupe; không đạo cụ trừ khi là món trong outfit.
-4. **Khung và tỷ lệ** — hero 3:2, story 4:5, item và outfit 3:4. Khớp với `Ratio` trong `EditorialImage`.
+4. **Khung và tỷ lệ** — hero 3:2, story 4:5, item + outfit + **style** 3:4. Khớp với `Ratio`
+   trong `EditorialImage`: ảnh style render bằng `ratio="look"` ở cả `/styles`
+   (`src/app/styles/page.tsx:15`) và trang chủ (`src/app/page.tsx:64`).
 5. **Hậu kỳ** — tông ấm, độ tương phản trung bình, không filter, không hạt film giả.
 6. **Khối prompt dùng lại** — dán nguyên văn ở đầu mỗi thread ChatGPT, trước mọi prompt ảnh:
 
