@@ -38,8 +38,8 @@ pnpm lint                                 # eslint
 pnpm typecheck                            # runs `next typegen` first (pretypecheck), then tsc --noEmit
 pnpm test                                 # vitest run
 pnpm test:watch                           # vitest, watch mode
-pnpm vitest run src/lib/x.test.ts         # single test file
-pnpm vitest run -t "ranking prefers"      # single test by name
+pnpm vitest run src/data/index.test.ts    # single test file
+pnpm vitest run -t "trả về đúng item theo slug"  # single test by name
 ```
 
 The app must boot and pass these without Supabase credentials or a paid AI key.
