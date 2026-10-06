@@ -286,14 +286,14 @@ that expansion adds fixture entries, extend this list with their slugs the same
 way — the `<kind>/<slug>.jpg` convention above is the durable part, this list is a
 snapshot of it.
 
-- **items** (`src/data/fixtures/items.ts`): `so-mi-trang`, `ao-lua`,
+- **items** (`src/data/fixtures/items.ts`): `ao-cardigan`, `so-mi-trang`, `ao-lua`,
   `quan-wide-leg-chocolate`, `chan-vay-midi`, `blazer`, `loafer`
   → e.g. `public/images/items/so-mi-trang.jpg`
 - **styles** (`src/data/fixtures/styles.ts`): `modern-classic`, `quiet-luxury`,
   `minimalist`, `soft-feminine`, `casual-chic`
   → e.g. `public/images/styles/modern-classic.jpg`
 - **outfits** (`src/data/fixtures/outfits.ts`): `modern-classic-di-lam`,
-  `soft-feminine-cuoi-tuan`
+  `soft-feminine-cuoi-tuan`, `quiet-luxury-ngay-thuong`
   → e.g. `public/images/outfits/modern-classic-di-lam.jpg`
 - **stories** (`src/data/fixtures/stories.ts`): `mua-thu-nay-mac-mau-gi`,
   `chocolate-brown`, `so-mi-trang-phoi-the-nao`
@@ -344,5 +344,21 @@ no imagery exists yet.
 
 ### Log
 
-_No entries yet. The first entries are recorded by the task that produces the first
-images._
+**First batch (4 images).** Produced `hero/thu-2026.jpg` (hero, 3:2), a tighter 3:4
+crop of the same look (now `styles/quiet-luxury.jpg`), a flat-lay of the burgundy
+cardigan, and the full look worn with chocolate wide-leg trousers. All four read as
+one shoot: same cardigan, same ivory background, same lighting, no recognizable face.
+Reference-image conditioning worked as intended — the cardigan is identifiable across
+the hero, the flat-lay, and the worn outfit shot.
+
+The hero and the flat-lay matched their intended fixture slots directly. The other
+two did not: the flat-lay's filename (`ao-cardigan`) had no matching item record, and
+the worn-outfit photo showed a cardigan + wide-leg trousers while the only outfit
+slug available for that layout (`soft-feminine-cuoi-tuan`) was defined as a silk
+blouse + midi skirt + loafers — a different garment set. Rather than regenerate
+images to fit the existing fixtures, the fixtures were adjusted to match what was
+actually photographed: a new `ao-cardigan` item record was added, a new
+`quiet-luxury-ngay-thuong` outfit record was added pairing it with the existing
+`quan-wide-leg-chocolate` item, and the tighter 3:4 crop was repointed to the
+`quiet-luxury` style slot (`styles/quiet-luxury.jpg`). `soft-feminine-cuoi-tuan`
+was left untouched with `image: null`.

@@ -19,4 +19,13 @@ export const outfits: Outfit[] = [
     itemSlugs: ['ao-lua', 'chan-vay-midi', 'loafer'],
     styleSlugs: ['soft-feminine'],
   },
+  {
+    slug: 'quiet-luxury-ngay-thuong',
+    name: 'Quiet Luxury ngày thường',
+    whyItWorks:
+      'Cardigan len không cấu trúc đi cùng quần âu ống rộng là hai sắc thái mềm của cùng một tông ấm, nên cả bộ không có điểm nào phải giành chú ý. Burgundy và chocolate đứng gần nhau trên vòng màu — đủ khác để thấy lớp lang, chưa đủ xa để thành tương phản.',
+    image: '/images/outfits/quiet-luxury-ngay-thuong.jpg',
+    itemSlugs: ['ao-cardigan', 'quan-wide-leg-chocolate'],
+    styleSlugs: ['quiet-luxury'],
+  },
 ]

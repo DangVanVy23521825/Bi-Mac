@@ -23,7 +23,12 @@ export function EditorialHero() {
           Vào tủ đồ
         </Link>
       </div>
-      <EditorialImage src={null} alt="Số mùa thu của Bí Mặc" ratio="hero" priority />
+      <EditorialImage
+        src="/images/hero/thu-2026.jpg"
+        alt="Số mùa thu của Bí Mặc"
+        ratio="hero"
+        priority
+      />
     </section>
   )
 }

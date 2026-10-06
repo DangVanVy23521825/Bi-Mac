@@ -12,7 +12,7 @@ export const styles: Style[] = [
     slug: 'quiet-luxury',
     name: 'Quiet Luxury',
     tagline: 'Không logo, không ồn ào. Chất liệu và dáng áo nói thay.',
-    image: null,
+    image: '/images/styles/quiet-luxury.jpg',
     colorSlugs: ['kem', 'be-xam', 'chocolate'],
   },
   {

@@ -2,6 +2,16 @@ import type { FashionItem } from '@/types/content'
 
 export const items: FashionItem[] = [
   {
+    slug: 'ao-cardigan',
+    name: 'Cardigan len',
+    category: 'outerwear',
+    excerpt:
+      'Lớp khoác mềm, không cấu trúc — làm outfit ấm và dịu lại mà không thêm đường vai hay nếp gấp nào.',
+    image: '/images/items/ao-cardigan.jpg',
+    colorSlugs: ['burgundy'],
+    styleSlugs: ['quiet-luxury', 'soft-feminine'],
+  },
+  {
     slug: 'so-mi-trang',
     name: 'Sơ mi trắng',
     category: 'tops',
