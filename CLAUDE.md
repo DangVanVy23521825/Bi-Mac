@@ -16,9 +16,15 @@ seller, marketplace, or purchasing flows unless the product scope is explicitly 
 
 ## Repository state
 
-This repository currently contains documentation and steering files only — no
-application code. Milestone 0 initializes Next.js in the repository root
-(see `PROMPT_INIT_CLAUDE.md` and `docs/09_MVP_ROADMAP.md`).
+A Next.js application exists in the repository root. Milestone 0 (foundation —
+App Router scaffold, editorial Home, Wardrobe, Styles, AI Stylist, My Closet,
+Vitest coverage) is complete and deployed to production:
+
+- Production: https://bi-mac.vercel.app
+- Vercel project: `hoatien/bi-mac`
+
+The next milestone (M1) is the art-direction image batch (see
+`docs/13_ART_DIRECTION.md` and `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`).
 
 Keep the command list below accurate as the toolchain lands.
 
@@ -28,12 +34,12 @@ Keep the command list below accurate as the toolchain lands.
 pnpm install                              # install
 pnpm dev                                  # local dev server
 pnpm build                                # production build
-pnpm lint
-pnpm typecheck
-pnpm test                                 # Vitest
+pnpm lint                                 # eslint
+pnpm typecheck                            # runs `next typegen` first (pretypecheck), then tsc --noEmit
+pnpm test                                 # vitest run
+pnpm test:watch                           # vitest, watch mode
 pnpm vitest run src/lib/x.test.ts         # single test file
 pnpm vitest run -t "ranking prefers"      # single test by name
-pnpm playwright test                      # e2e, once configured
 ```
 
 The app must boot and pass these without Supabase credentials or a paid AI key.

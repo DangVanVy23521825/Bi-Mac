@@ -1,59 +1,32 @@
-# Bí Mặc — Claude Code Starter Pack
+# Bí Mặc
 
-This pack gives Claude Code the product context and repository-level steering needed
-to build Bí Mặc incrementally without re-explaining the project every session.
+Nền tảng kiến thức thời trang và gợi ý phối đồ cho phụ nữ Việt.
 
-## Why this pack is Claude-specific
+Live: https://bi-mac.vercel.app
 
-Claude Code automatically reads a root `CLAUDE.md`. The pack keeps that file compact
-and uses progressive disclosure:
-
-- `CLAUDE.md` — persistent repo context and high-level conventions
-- `.claude/rules/` — path-scoped constraints that load only when relevant files are touched
-- `.claude/skills/` — reusable procedures for milestone implementation, verification,
-  and UI review
-- `docs/` — durable product, architecture, security, design, and roadmap references
-- `docs/plans/` — lightweight plans for substantial milestones
-- `PROMPT_INIT_CLAUDE.md` — first task to paste into Claude Code
-
-## Install into a new repo
-
-Copy the contents of this folder into the repository root.
-
-Then:
+## Chạy ở máy
 
 ```bash
-cd <your-repo>
-claude
+pnpm install
+pnpm dev
 ```
 
-Do not run `/init` if it would overwrite the curated `CLAUDE.md`. If you want Claude
-to inspect the repository, ask it to do so directly.
+Không cần credential nào. Không cần Supabase, không cần API key.
 
-Paste the task from `PROMPT_INIT_CLAUDE.md`.
+## Kiểm tra
 
-## Recommended workflow
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
 
-Use one milestone per focused Claude Code session when practical:
+## Tài liệu
 
-1. Foundation
-2. Fashion knowledge graph / Wardrobe / Styles / Outfits
-3. Supabase Auth + My Closet
-4. AI Stylist
-5. Editorial content/admin workflow
-6. Production polish
+- Hướng dự án hiện hành: `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`
+- Quyết định kiến trúc: `docs/11_DECISIONS.md`
+- Art direction: `docs/13_ART_DIRECTION.md`
+- Nội dung sản phẩm: `docs/00` → `docs/12`
 
-For substantial work, ask Claude to use the `implementing-milestone` skill.
-Before completion, invoke or ask it to use `verifying-changes`.
-For major UI work, use `reviewing-ui`.
-
-## Context discipline
-
-Do not tell Claude to read every project document for every small task. The root
-`CLAUDE.md` acts as an index, while `.claude/rules` and `.claude/skills` load more
-specialized guidance only when relevant.
-
-## Files shared with the Codex starter
-
-The `docs/00_...` through `docs/12_...` product documents intentionally match the
-Codex starter pack so either coding agent can work from the same product source of truth.
+Hình ảnh được tạo bằng AI phục vụ mục đích trình bày sản phẩm.
