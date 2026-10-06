@@ -48,6 +48,22 @@ describe('toàn vẹn tham chiếu fixture', () => {
     }
   })
 
+  it('mọi styleSlug của outfit đều tồn tại', () => {
+    for (const outfit of allOutfits) {
+      for (const slug of outfit.styleSlugs) {
+        expect(styleSlugs, `outfit ${outfit.slug}`).toContain(slug)
+      }
+    }
+  })
+
+  it('mọi colorSlug của style đều tồn tại', () => {
+    for (const style of allStyles) {
+      for (const slug of style.colorSlugs) {
+        expect(colorSlugs, `style ${style.slug}`).toContain(slug)
+      }
+    }
+  })
+
   it('không có slug trùng trong cùng một tập', () => {
     expect(new Set(allItems.map((i) => i.slug)).size).toBe(allItems.length)
     expect(new Set(allStyles.map((s) => s.slug)).size).toBe(allStyles.length)

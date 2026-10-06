@@ -18,13 +18,21 @@ seller, marketplace, or purchasing flows unless the product scope is explicitly 
 
 A Next.js application exists in the repository root. Milestone 0 (foundation —
 App Router scaffold, editorial Home, Wardrobe, Styles, AI Stylist, My Closet,
-Vitest coverage) is complete and deployed to production:
+Vitest coverage) and Milestone 1 (the art-direction image batch — see
+`docs/13_ART_DIRECTION.md` and
+`docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`) are both complete
+and deployed to production:
 
 - Production: https://bi-mac.vercel.app
 - Vercel project: `hoatien/bi-mac`
 
-The next milestone (M1) is the art-direction image batch (see
-`docs/13_ART_DIRECTION.md` and `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`).
+`/stylist` (AI Stylist) and `/closet` (My Closet) are **copy-only shells**: they
+render real layout and copy, but there is no questionnaire flow, no save action,
+and no persistence (no `localStorage`, no Supabase) anywhere in `src/`. That
+behaviour is scoped to a later milestone, not M0/M1 — do not assume it exists.
+
+The next milestone (M2) is the catalog expansion: 15 items, 5 styles, 10 outfits,
+and 3 stories, together with the photography those additional fixtures need.
 
 Keep the command list below accurate as the toolchain lands.
 

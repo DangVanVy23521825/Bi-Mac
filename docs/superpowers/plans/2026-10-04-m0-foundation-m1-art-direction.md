@@ -36,7 +36,7 @@
 | `src/components/ui/SectionHeading.tsx` | Eyebrow + tiêu đề serif, dùng lại ở mọi section |
 | `src/components/editorial/*.tsx` | Primitive nội dung: hero, tile, look, swatch, card, CTA |
 | `src/components/layout/nav.ts` | Cấu hình nav + `isActive()` — logic thuần, test được |
-| `src/components/layout/SiteHeader.tsx` | Header server component |
+| `src/components/layout/SiteHeader.tsx` | Header client component (`usePathname` cho trạng thái active) |
 | `src/components/layout/MobileNavigation.tsx` | Client component: overlay, Escape, khoá scroll |
 | `src/components/layout/Footer.tsx` | Footer + dòng công bố ảnh AI |
 | `src/app/page.tsx` | Trang chủ: chỉ gọi repository rồi compose primitive |

@@ -1,5 +1,10 @@
 # 12 — Initial Task Backlog
 
+> **Superseded in part by** `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`
+> (ADR-010, ADR-012). Read the spec before following this document. The Supabase
+> adapter stubs, authentication, and closet-persistence items below are deferred
+> out of v1.
+
 This is the initial ordered backlog. For substantial tasks, create an ExecPlan.
 
 ## P0 — Foundation

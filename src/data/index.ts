@@ -16,7 +16,7 @@ export async function getTrendingItems(): Promise<FashionItem[]> {
 }
 
 export async function getEssentialItems(): Promise<FashionItem[]> {
-  return items.slice(0, 4)
+  return items.slice(3, 7)
 }
 
 export async function getStyles(): Promise<Style[]> {

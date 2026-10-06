@@ -2,10 +2,11 @@
 
 This document is the operating procedure for producing Bí Mặc's 35 image files: 34
 photographs made by hand in ChatGPT, plus 1 OG share-card crop derived from the hero
-image rather than generated separately (see §8). There is no photography yet — every
-image slot in the running app currently renders a token-tinted placeholder
-(`EditorialImage` with `src: null`). This spec exists so that when those 34
-photographs get made, over several sessions and possibly by more than one person,
+image rather than generated separately (see §8). Four of the 34 photographs exist
+today — see §9 for exactly which ones and how they were produced; every remaining
+image slot in the running app still renders a token-tinted placeholder
+(`EditorialImage` with `src: null`). This spec exists so that as the rest of those
+34 photographs get made, over several sessions and possibly by more than one person,
 they look like they came from one shoot rather than 34 unrelated pictures.
 
 It is not a mood board. Every rule below is written so that a different person
@@ -277,9 +278,9 @@ where `<kind>` is one of `hero`, `styles`, `items`, `outfits`, `stories`, or `og
 fixture `image` fields at these paths, so the slug must match character for
 character — no translation, no reformatting, no trailing variation.
 
-Slugs confirmed against the fixtures as of this writing — this list is the M0
-fixture inventory, not the full 34-image generation budget. It covers 6 items, 5
-styles, 2 outfits, and 3 stories because that is all the current fixture set
+Slugs confirmed against the fixtures as of this writing — this list is the M0+M1
+fixture inventory, not the full 34-image generation budget. It covers 7 items, 5
+styles, 3 outfits, and 3 stories because that is all the current fixture set
 contains; the catalog expansion that reaches 15 items and 10 outfits (the sizes that
 add up to the 34 generated photographs in §1/§6) lands in a later milestone. When
 that expansion adds fixture entries, extend this list with their slugs the same
@@ -339,8 +340,7 @@ keep the garment recognizably the same piece, not to guarantee an identical rend
 
 **Prompt log.** Record every prompt actually used — the exact text sent, not a
 paraphrase — so a future regeneration can reproduce or deliberately deviate from what
-shipped. Append entries below as images are produced; this section starts empty because
-no imagery exists yet.
+shipped. Append entries below as images are produced.
 
 ### Log
 
@@ -362,3 +362,28 @@ actually photographed: a new `ao-cardigan` item record was added, a new
 `quan-wide-leg-chocolate` item, and the tighter 3:4 crop was repointed to the
 `quiet-luxury` style slot (`styles/quiet-luxury.jpg`). `soft-feminine-cuoi-tuan`
 was left untouched with `image: null`.
+
+**Gap: per-image timing not captured.** M1's second exit criterion (spec §8:
+"4 tấm nhìn ra một bộ; biết thời gian thật cho mỗi tấm") requires knowing the real
+time cost per image, because M1 exists to price the remaining 30 photographs
+before committing to them. That number was not recorded during this batch and
+cannot be reconstructed after the fact — only the person who generated the images
+knows it. Any M2 photography effort estimate derived from this batch is
+**ungrounded** until it is supplied.
+
+`PER_IMAGE_TIME_MINUTES: <TODO — fill in from the session that produced the first
+batch; one figure per image or one average across the 4, whichever is accurate>`
+
+**Gap: verbatim prompts not recorded.** The narrative above summarizes what was
+generated, but §9's own instruction ("Record every prompt actually used — the
+exact text sent, not a paraphrase") was not followed for this batch — the actual
+per-image prompt text sent into ChatGPT was not saved. Do not treat the narrative
+summary above as a substitute; it cannot be pasted into a new thread to reproduce
+or deviate from what shipped.
+
+`VERBATIM_PROMPTS: <TODO — the exact §6 block confirmation plus each §7.x prompt
+actually sent for hero/thu-2026, styles/quiet-luxury, items/ao-cardigan, and
+outfits/quiet-luxury-ngay-thuong, in the order they were sent>`
+
+Neither figure is fabricated here; both are left as explicit placeholders so M2
+planning does not silently treat this batch as fully priced or fully reproducible.
