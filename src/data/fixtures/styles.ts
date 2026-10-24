@@ -31,7 +31,7 @@ export const styles: Style[] = [
     ],
     outfitFormulas: [
       'Cardigan len + quần wide-leg chocolate + loafer',
-      'Áo lụa + chân váy midi + loafer',
+      'Slip dress + trench coat + ballet flat',
       'Sơ mi trắng + cardigan len + loafer',
     ],
   },
@@ -47,7 +47,7 @@ export const styles: Style[] = [
       'Minimalist và quiet luxury là hai phong cách dễ nhầm nhất trong năm, vì chia sẻ hai trên ba màu trong bảng — cả hai đều có kem và be-xám. Khác biệt nằm ở màu còn lại và ở chất liệu đứng trên đó: minimalist chọn đen làm nền lạnh, đứng trên sơ mi trắng và blazer có cấu trúc rõ; quiet luxury chọn chocolate làm nền ấm, đứng trên áo lụa và cardigan len có độ rủ mềm. Đặt hai outfit cạnh nhau, khoảng cách không nằm ở màu mà ở cách vải phản ứng với ánh sáng — một bên cứng và rõ nét, một bên mềm và lặng.',
     ],
     outfitFormulas: [
-      'Sơ mi trắng + quần wide-leg chocolate + loafer',
+      'Áo dệt kim mỏng + quần âu + loafer',
       'Blazer + chân váy midi + loafer',
       'Sơ mi trắng + blazer + loafer',
     ],
@@ -82,7 +82,7 @@ export const styles: Style[] = [
     ],
     outfitFormulas: [
       'Quần wide-leg chocolate + cardigan len + loafer',
-      'Sơ mi trắng + quần wide-leg chocolate + loafer',
+      'Shirt dress + cardigan len + ballet flat',
       'Áo lụa + quần wide-leg chocolate + loafer',
     ],
   },
