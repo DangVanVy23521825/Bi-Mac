@@ -44,7 +44,7 @@ export const styles: Style[] = [
     paragraphs: [
       'Minimalist trong catalog không đồng nghĩa với màu đơn sắc tuyệt đối — kem, đen, be-xám vẫn là ba màu, không phải một. Thứ bị loại bỏ là chi tiết thừa: không túi áo trang trí, không đường diễu chỉ màu, không khóa kéo hở. Sơ mi trắng và blazer là hai món đại diện rõ nhất, vì cả hai đạt cảm giác "nghiêm túc" chỉ bằng đường cắt, không cần thêm họa tiết hay phụ kiện đi kèm.',
       'Vì không có chi tiết để che lỗi, minimalist là phong cách khó mặc nhất trong catalog nếu món đồ không đúng form — một chiếc blazer rộng hơn cỡ sẽ lộ ngay vì không có gì khác để đánh lạc hướng. Đổi lại, khi đúng form, outfit minimalist gọn và nhẹ hơn mọi phong cách khác, vì số món trong một bộ thường chỉ hai hoặc ba.',
-      'Vì minimalist không có nhiều món để đổi vòng, đây cũng là phong cách duy nhất trong catalog mà một món lỗi form sẽ kéo cả outfit xuống ngay — không có cardigan buông hay áo lụa rủ để phân tán sự chú ý khỏi vai blazer lệch hoặc quần không đúng cạp. Đổi lại, một bộ minimalist đúng form di chuyển dễ hơn các phong cách nhiều lớp, vì không có lớp thừa nào cản chuyển động.',
+      'Minimalist và quiet luxury là hai phong cách dễ nhầm nhất trong năm, vì chia sẻ hai trên ba màu trong bảng — cả hai đều có kem và be-xám. Khác biệt nằm ở màu còn lại và ở chất liệu đứng trên đó: minimalist chọn đen làm nền lạnh, đứng trên sơ mi trắng và blazer có cấu trúc rõ; quiet luxury chọn chocolate làm nền ấm, đứng trên áo lụa và cardigan len có độ rủ mềm. Đặt hai outfit cạnh nhau, khoảng cách không nằm ở màu mà ở cách vải phản ứng với ánh sáng — một bên cứng và rõ nét, một bên mềm và lặng.',
     ],
     outfitFormulas: [
       'Sơ mi trắng + quần wide-leg chocolate + loafer',
