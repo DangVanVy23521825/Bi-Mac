@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  allColors, allItems, allOutfits, allStyles,
+  allCategories, allColors, allItems, allOutfits, allStyles,
   getItemBySlug, getFeaturedStories,
 } from '@/data'
 
@@ -67,5 +67,45 @@ describe('toàn vẹn tham chiếu fixture', () => {
   it('không có slug trùng trong cùng một tập', () => {
     expect(new Set(allItems.map((i) => i.slug)).size).toBe(allItems.length)
     expect(new Set(allStyles.map((s) => s.slug)).size).toBe(allStyles.length)
+  })
+})
+
+describe('metadata xếp hạng', () => {
+  it('mọi item có ít nhất một dịp mặc', () => {
+    for (const item of allItems) {
+      expect(item.occasions.length, `item ${item.slug}`).toBeGreaterThan(0)
+    }
+  })
+
+  it('mọi item ngoài phụ kiện đều có fit', () => {
+    for (const item of allItems.filter((i) => i.category !== 'accessories')) {
+      expect(item.fit, `item ${item.slug}`).not.toBeNull()
+    }
+  })
+
+  it('phụ kiện không có fit', () => {
+    for (const item of allItems.filter((i) => i.category === 'accessories')) {
+      expect(item.fit, `item ${item.slug}`).toBeNull()
+    }
+  })
+
+  it('mọi outfit có ít nhất một dịp mặc', () => {
+    for (const outfit of allOutfits) {
+      expect(outfit.occasions.length, `outfit ${outfit.slug}`).toBeGreaterThan(0)
+    }
+  })
+
+  it('mọi category của item đều là category đã khai báo', () => {
+    const slugs = new Set(allCategories.map((c) => c.slug))
+    for (const item of allItems) {
+      expect(slugs, `item ${item.slug}`).toContain(item.category)
+    }
+  })
+
+  it('mọi style có nội dung dài và công thức phối', () => {
+    for (const style of allStyles) {
+      expect(style.paragraphs.length, `style ${style.slug}`).toBeGreaterThanOrEqual(2)
+      expect(style.outfitFormulas.length, `style ${style.slug}`).toBe(3)
+    }
   })
 })

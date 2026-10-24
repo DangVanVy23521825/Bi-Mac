@@ -9,6 +9,7 @@ export const outfits: Outfit[] = [
     image: null,
     itemSlugs: ['so-mi-trang', 'quan-wide-leg-chocolate', 'loafer'],
     styleSlugs: ['modern-classic'],
+    occasions: ['work'],
   },
   {
     slug: 'soft-feminine-cuoi-tuan',
@@ -18,6 +19,7 @@ export const outfits: Outfit[] = [
     image: null,
     itemSlugs: ['ao-lua', 'chan-vay-midi', 'loafer'],
     styleSlugs: ['soft-feminine'],
+    occasions: ['casual', 'date'],
   },
   {
     slug: 'quiet-luxury-ngay-thuong',
@@ -27,5 +29,6 @@ export const outfits: Outfit[] = [
     image: '/images/outfits/quiet-luxury-ngay-thuong.jpg',
     itemSlugs: ['ao-cardigan', 'quan-wide-leg-chocolate'],
     styleSlugs: ['quiet-luxury'],
+    occasions: ['casual'],
   },
 ]
