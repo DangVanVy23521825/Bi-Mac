@@ -183,7 +183,7 @@ export const items: FashionItem[] = [
     fit: 'fitted',
     attributes: [],
     whatItIs:
-      'Áo dệt kim mỏng là áo sợi dệt kim mảnh, ôm nhẹ theo đường thân nhưng không bó sát như áo co giãn mạnh. Vải có độ đàn hồi tự nhiên của sợi dệt kim nên không cần chiết eo để tạo dáng, khác với sơ mi trắng phải nhờ đường may. So với cardigan len, áo này mỏng và nhẹ hơn nhiều, đủ để mặc một mình hoặc làm lớp trong dưới áo khoác.',
+      'Áo dệt kim mỏng là áo sợi dệt kim mảnh, ôm nhẹ theo thân nhưng không bó sát như áo co giãn. Độ đàn hồi của sợi kim thay cho đường chiết eo như sơ mi trắng. So với cardigan len, áo này mỏng và nhẹ hơn, đủ mặc một mình hoặc làm lớp trong.',
     characteristics: [
       'Sợi dệt kim mảnh, co giãn tự nhiên, ôm nhẹ theo thân mà không cần chiết eo.',
       'Mỏng hơn cardigan len, đủ nhẹ để làm lớp trong dưới blazer hoặc trench coat.',
@@ -193,7 +193,7 @@ export const items: FashionItem[] = [
     howToStyle:
       'Vì áo đã ôm nhẹ và trung tính, bỏ vào quần âu và khoác blazer là công thức đi làm gọn nhất — hai món đều có cấu trúc nên bù lại độ mềm của áo dệt kim. Đi học hoặc cuối tuần, mặc cùng quần wide-leg chocolate, không cần lớp khoác, thêm túi có kết cấu để outfit không quá đơn giản. Khi trời lạnh, trench coat khoác ngoài giữ được dáng ôm của áo mà không thêm khối ở vai như blazer.',
     whatToAvoid:
-      'Tránh mặc áo dệt kim mỏng một mình với quần âu cho dịp cần trang trọng — thiếu lớp ngoài, outfit sẽ thiếu điểm nhấn cấu trúc. Tránh chọn cỡ quá bó sát, vải dệt kim mỏng dễ lộ hết đường chiết của lớp trong trừ khi đó là chủ ý. Tránh giặt ở nhiệt cao, sợi dệt kim mảnh dễ giãn và mất dáng ôm ban đầu.',
+      'Tránh mặc áo dệt kim mỏng một mình với quần âu cho dịp cần trang trọng — thiếu lớp ngoài, outfit sẽ thiếu điểm nhấn cấu trúc. Tránh chọn cỡ quá bó sát, vải dệt kim mỏng dễ lộ hết đường chiết của lớp trong trừ khi đó là chủ ý. Tránh giặt ở nhiệt cao, sợi dệt kim mảnh dễ giãn và mất dáng ôm.',
   },
   {
     slug: 'quan-au',
@@ -208,7 +208,7 @@ export const items: FashionItem[] = [
     fit: 'fitted',
     attributes: [],
     whatItIs:
-      'Quần âu là quần tây có đường ly giữa thẳng từ gối xuống gấu, ống côn nhẹ chứ không rộng đều như quần wide-leg chocolate. Cạp vừa, không cao quá, và vải có độ đứng đủ để giữ đường ly suốt ngày mà không cần ủi lại. Đây là món quần có cấu trúc rõ nhất trong catalog, khác hẳn độ buông của chân váy midi hay độ rộng của wide-leg.',
+      'Quần âu là quần tây có đường ly giữa thẳng từ gối xuống gấu, ống côn nhẹ hơn quần wide-leg chocolate. Cạp vừa, vải có độ đứng đủ giữ đường ly suốt ngày. Đây là món quần có cấu trúc rõ nhất trong catalog, khác hẳn độ buông của chân váy midi.',
     characteristics: [
       'Đường ly giữa thẳng từ gối xuống gấu, giữ dáng suốt ngày không cần ủi lại.',
       'Ống côn nhẹ, hẹp hơn quần wide-leg chocolate, lộ rõ hình dáng chân hơn.',
@@ -233,7 +233,7 @@ export const items: FashionItem[] = [
     fit: 'relaxed',
     attributes: [],
     whatItIs:
-      'Shirt dress là váy liền dáng sơ mi kéo dài, cài cúc từ cổ xuống gấu, mang nguyên cấu trúc cổ đứng và nẹp cúc của sơ mi trắng nhưng kéo dài thành một món duy nhất. Dáng relaxed, không chiết eo sâu, nên thường cần thắt lưng rời để định hình lại tỷ lệ. Vì gộp cả áo và quần thành một, shirt dress giảm quyết định phối đồ nhưng cũng giảm linh hoạt khi muốn đổi phong cách trong ngày.',
+      'Shirt dress là váy liền dáng sơ mi, cài cúc từ cổ xuống gấu, mang cấu trúc cổ đứng và nẹp cúc của sơ mi trắng. Dáng relaxed, không chiết eo sâu, cần thắt lưng rời để định hình tỷ lệ. Vì gộp áo và quần thành một, nó giảm quyết định phối đồ nhưng cũng giảm linh hoạt đổi phong cách trong ngày.',
     characteristics: [
       'Cài cúc từ cổ xuống gấu, mang cấu trúc cổ đứng và nẹp cúc như sơ mi trắng.',
       'Dáng relaxed, không chiết eo sâu, cần thắt lưng rời để lấy lại tỷ lệ.',
@@ -258,7 +258,7 @@ export const items: FashionItem[] = [
     fit: 'relaxed',
     attributes: ['sleeveless', 'clingy'],
     whatItIs:
-      'Slip dress là váy liền không tay, cắt chéo theo đường vải (bias cut) nên bám nhẹ theo thân thay vì đứng khối như shirt dress. Dây áo mỏng, không có cấu trúc vai hay nẹp cúc nào để định hình, nên toàn bộ dáng váy phụ thuộc vào cách vải rơi tự nhiên. Đây là món ít cấu trúc nhất trong catalog, đối lập hẳn với blazer hay shirt dress.',
+      'Slip dress là váy liền không tay, cắt chéo theo đường vải nên bám nhẹ theo thân, khác độ đứng khối của shirt dress. Dây áo mỏng, không có cấu trúc vai hay nẹp cúc, dáng váy phụ thuộc vào cách vải rơi. Đây là món ít cấu trúc nhất trong catalog, đối lập với blazer.',
     characteristics: [
       'Cắt chéo theo đường vải, bám nhẹ theo thân (clingy), không giữ khối như vải dệt thẳng.',
       'Không tay, dây áo mỏng, không có đường may định hình ở vai hay eo.',
@@ -268,7 +268,7 @@ export const items: FashionItem[] = [
     howToStyle:
       'Vì slip dress không tay và bám sát, luôn cần một lớp ngoài để cân lại — trench coat khoác buông, không cài cúc, là lựa chọn hợp nhất cho sự kiện buổi tối. Cardigan len cũng được nhưng sẽ kéo outfit về hướng thường ngày hơn là sang trọng. Đi ballet flat nếu cần di chuyển nhiều, hoặc giữ nguyên để không kéo thêm một lớp nổi bật vào outfit đã đủ bám sát. Túi có kết cấu giúp outfit có một điểm cứng để không mềm toàn bộ.',
     whatToAvoid:
-      'Tránh mặc slip dress không tính lớp trong khi vải mỏng và bám sát — cần tính lớp lót tùy dịp. Tránh phối với áo khoác cũng có cấu trúc chiết eo rõ như blazer, hai đường chiết sẽ xung đột nhau ở cùng vị trí. Tránh chọn phụ kiện cũng có chi tiết bám sát hoặc bóng, outfit sẽ mất điểm neo thị giác.',
+      'Tránh mặc slip dress không tính lớp trong khi vải mỏng và bám sát — cần tính lớp lót tùy dịp. Tránh phối với áo khoác cũng có cấu trúc chiết eo rõ như blazer, hai đường chiết sẽ xung đột nhau. Tránh chọn phụ kiện cũng có chi tiết bám sát hoặc bóng, outfit sẽ mất điểm neo thị giác.',
   },
   {
     slug: 'a-line-dress',
@@ -283,7 +283,7 @@ export const items: FashionItem[] = [
     fit: 'relaxed',
     attributes: ['sleeveless'],
     whatItIs:
-      'A-line dress là váy liền xòe nhẹ từ eo xuống gấu, tạo hình chữ A, khác hẳn độ bám sát của slip dress hoặc độ thẳng của shirt dress. Không tay nhưng vải đứng hơn lụa nên không cần tính lớp lót như slip dress. Đường eo thường chiết nhẹ hoặc có đường cắt ngang, đủ để định hình dáng mà không cần thắt lưng rời như shirt dress.',
+      'A-line dress là váy liền xòe nhẹ từ eo xuống gấu, tạo hình chữ A, khác hẳn độ bám sát của slip dress. Không tay nhưng vải đứng hơn lụa, không cần tính lớp lót như slip dress. Đường eo chiết nhẹ hoặc cắt ngang, định hình dáng mà không cần thắt lưng rời như shirt dress.',
     characteristics: [
       'Xòe nhẹ từ eo xuống gấu theo hình chữ A, không bám sát như slip dress.',
       'Không tay nhưng vải đứng hơn lụa, không cần tính lớp lót phía trong.',
@@ -308,7 +308,7 @@ export const items: FashionItem[] = [
     fit: 'relaxed',
     attributes: [],
     whatItIs:
-      'Trench coat là áo khoác dáng dài qua hông hoặc qua gối, có đai lưng rời và cổ bẻ rộng, khác hẳn độ fitted và vai dựng của blazer. Thân áo relaxed, không chiết eo trừ khi thắt đai, nên độ vừa vặn phụ thuộc nhiều vào cách buộc đai hơn là số đo áo. Vì dáng dài và rộng, trench coat là lớp ngoài cùng, mặc ngoài mọi món khác trong catalog chứ không đứng chung lớp với cardigan hay blazer.',
+      'Trench coat là áo khoác dáng dài qua hông hoặc gối, có đai lưng rời và cổ bẻ rộng, khác hẳn độ fitted và vai dựng của blazer. Thân relaxed, không chiết eo trừ khi thắt đai, độ vừa vặn phụ thuộc vào cách buộc đai. Nó là lớp ngoài cùng, mặc ngoài mọi món khác trong catalog, không đứng chung lớp với cardigan hay blazer.',
     characteristics: [
       'Dáng dài qua hông hoặc gối, có đai lưng rời để tự chiết eo khi cần.',
       'Cổ bẻ rộng, thường có cầu vai và túi hộp, chi tiết đặc trưng của áo mưa cổ điển.',
@@ -318,7 +318,7 @@ export const items: FashionItem[] = [
     howToStyle:
       'Buộc đai ở eo khi mặc ngoài shirt dress hoặc áo dệt kim mỏng và quần âu để trench coat thêm cấu trúc thay vì chỉ thêm lớp ấm. Đi làm, giữ đai buộc gọn và đi loafer để cả bộ nghiêm túc. Cuối tuần, để trench coat buông không buộc đai, mặc ngoài áo dệt kim mỏng và quần wide-leg chocolate, đi ballet flat cho thoải mái hơn.',
     whatToAvoid:
-      'Tránh mặc trench coat cùng lúc với blazer hoặc món khác cũng có vai cấu trúc bên trong — hai lớp dựng vai sẽ chồng lên nhau rất cứng. Tránh để đai lưng buông lỏng không buộc trong môi trường công sở, trông luộm thuộm hơn là có chủ ý. Tránh chọn trench coat quá dài so với chiều dài chân váy hoặc váy liền mặc bên trong, phần thừa ra sẽ làm outfit mất tỷ lệ.',
+      'Tránh mặc trench coat cùng blazer hoặc món khác cũng có vai cấu trúc — hai lớp dựng vai sẽ chồng lên nhau rất cứng. Tránh để đai lưng buông lỏng không buộc ở công sở, trông luộm thuộm hơn có chủ ý. Tránh chọn trench coat quá dài so với chân váy hoặc váy liền mặc bên trong, phần thừa làm outfit mất tỷ lệ.',
   },
   {
     slug: 'ballet-flat',
@@ -358,7 +358,7 @@ export const items: FashionItem[] = [
     fit: null,
     attributes: [],
     whatItIs:
-      'Túi có kết cấu là túi có khung cứng hoặc đường may rõ giữ hình dáng cố định, không xệ hay đổi hình theo những gì đựng bên trong như túi vải mềm. Phần quai thường ngắn hoặc vừa, cầm tay hoặc đeo chéo gọn, không phải quai yếm to bản. Vì giữ dáng cố định, nó là món phụ kiện đóng vai trò điểm neo cấu trúc khi những món còn lại trong outfit đều mềm hoặc rủ.',
+      'Túi có kết cấu là túi khung cứng hoặc đường may rõ, giữ dáng cố định, không xệ theo đồ đựng trong như túi vải mềm. Quai ngắn hoặc vừa, cầm tay hoặc đeo chéo gọn. Nó là điểm neo cấu trúc khi outfit còn lại đều mềm hoặc rủ.',
     characteristics: [
       'Khung cứng hoặc đường may rõ, giữ hình dáng cố định dù đựng gì bên trong.',
       'Quai ngắn hoặc vừa, cầm tay hoặc đeo chéo gọn, không phải quai yếm to bản.',
@@ -368,6 +368,6 @@ export const items: FashionItem[] = [
     howToStyle:
       'Dùng túi có kết cấu khi outfit còn lại đều mềm — áo lụa và quần âu, hoặc slip dress khoác trench coat — để có một điểm cứng cân lại toàn bộ. Vì vai blazer đã có cấu trúc riêng, chọn túi cầm tay nhỏ thay vì túi đeo chéo to khi phối cùng blazer, tránh chồng hai điểm cấu trúc lên nhau. Đi làm, túi này thay được vai trò điểm nhấn mà không cần thêm trang sức hay chi tiết khác.',
     whatToAvoid:
-      'Tránh dùng túi có kết cấu cùng lúc với outfit đã nhiều món cứng như blazer và quần âu — hai điểm neo cấu trúc sẽ giành chú ý của nhau. Tránh chọn kích thước quá lớn so với outfit mỏng nhẹ như slip dress, tỷ lệ sẽ lệch. Tránh đeo quai chéo khi đã mặc trench coat có đai lưng, hai đường ngang sẽ cắt ngang người ở hai vị trí khác nhau.',
+      'Tránh dùng túi có kết cấu cùng outfit đã nhiều món cứng như blazer và quần âu — hai điểm neo cấu trúc sẽ giành chú ý của nhau. Tránh chọn kích thước quá lớn so với outfit mỏng nhẹ như slip dress, tỷ lệ sẽ lệch. Tránh đeo quai chéo khi đã mặc trench coat có đai lưng, hai đường ngang sẽ cắt ngang người ở hai vị trí khác nhau.',
   },
 ]
