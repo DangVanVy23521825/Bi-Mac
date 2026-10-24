@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   allCategories, allColors, allItems, allOutfits, allStyles,
   getItemBySlug, getFeaturedStories,
+  getItemsByCategory, getStylesForItem, getItemsForStyle, getItemsForOutfit,
+  getAvoidOptions, getStylistVocabulary,
 } from '@/data'
 
 describe('repository', () => {
@@ -107,5 +109,52 @@ describe('metadata xếp hạng', () => {
       expect(style.paragraphs.length, `style ${style.slug}`).toBeGreaterThanOrEqual(2)
       expect(style.outfitFormulas.length, `style ${style.slug}`).toBe(3)
     }
+  })
+})
+
+describe('repository cho trang chi tiết', () => {
+  it('trả 3 item cho mỗi category', async () => {
+    expect((await getItemsByCategory('dresses')).length).toBe(3)
+  })
+
+  it('trả mảng rỗng cho category không tồn tại', async () => {
+    expect(await getItemsByCategory('khong-ton-tai')).toEqual([])
+  })
+
+  it('suy ra style của item từ styleSlugs', async () => {
+    const styles = await getStylesForItem('so-mi-trang')
+    expect(styles.map((s) => s.slug)).toEqual(['modern-classic', 'minimalist', 'quiet-luxury'])
+  })
+
+  it('suy ra item của style, không cần field riêng', async () => {
+    const items = await getItemsForStyle('minimalist')
+    expect(items.length).toBeGreaterThan(0)
+    for (const item of items) {
+      expect(item.styleSlugs).toContain('minimalist')
+    }
+  })
+
+  it('giữ thứ tự itemSlugs khi trả item của outfit', async () => {
+    const items = await getItemsForOutfit('modern-classic-di-lam')
+    expect(items.map((i) => i.slug)).toEqual([
+      'so-mi-trang', 'quan-wide-leg-chocolate', 'loafer', 'tui-co-ket-cau',
+    ])
+  })
+})
+
+describe('vocabulary cho stylist', () => {
+  it('chỉ đưa ra lựa chọn tránh mà catalog thật sự tôn trọng được', async () => {
+    expect((await getAvoidOptions()).sort()).toEqual(
+      ['clingy', 'sheer', 'sleeveless', 'structured-shoulder'],
+    )
+  })
+
+  it('vocabulary chỉ chứa dữ liệu phẳng, không chứa entity', async () => {
+    const vocab = await getStylistVocabulary()
+    expect(vocab.styles.length).toBe(5)
+    expect(vocab.colors.length).toBe(5)
+    const firstColor = vocab.colors[0]
+    expect(firstColor).toBeDefined()
+    expect(Object.keys(firstColor!).sort()).toEqual(['name', 'slug'])
   })
 })

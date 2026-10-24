@@ -1,4 +1,5 @@
-import type { Category, Color, FashionItem, Outfit, Story, Style } from '@/types/content'
+import type { Category, Color, FashionItem, ItemAttribute, Outfit, Story, Style } from '@/types/content'
+import type { StylistVocabulary } from '@/types/stylist'
 import { categories } from './fixtures/categories'
 import { colors } from './fixtures/colors'
 import { items } from './fixtures/items'
@@ -87,4 +88,63 @@ export async function getRelatedOutfits(itemSlug: string): Promise<RelatedOutfit
   }
 
   return [...direct, ...topUp]
+}
+
+export async function getItemsByCategory(categorySlug: string): Promise<FashionItem[]> {
+  return items.filter((item) => item.category === categorySlug)
+}
+
+export async function getStyleBySlug(slug: string): Promise<Style | undefined> {
+  return styles.find((style) => style.slug === slug)
+}
+
+export async function getItemsForStyle(styleSlug: string): Promise<FashionItem[]> {
+  return items.filter((item) => item.styleSlugs.includes(styleSlug))
+}
+
+export async function getColorsForItem(itemSlug: string): Promise<Color[]> {
+  const item = items.find((candidate) => candidate.slug === itemSlug)
+  if (!item) {
+    return []
+  }
+  return item.colorSlugs
+    .map((slug) => colors.find((color) => color.slug === slug))
+    .filter((color): color is Color => color !== undefined)
+}
+
+export async function getStylesForItem(itemSlug: string): Promise<Style[]> {
+  const item = items.find((candidate) => candidate.slug === itemSlug)
+  if (!item) {
+    return []
+  }
+  return item.styleSlugs
+    .map((slug) => styles.find((style) => style.slug === slug))
+    .filter((style): style is Style => style !== undefined)
+}
+
+export async function getItemsForOutfit(outfitSlug: string): Promise<FashionItem[]> {
+  const outfit = outfits.find((candidate) => candidate.slug === outfitSlug)
+  if (!outfit) {
+    return []
+  }
+  return outfit.itemSlugs
+    .map((slug) => items.find((item) => item.slug === slug))
+    .filter((item): item is FashionItem => item !== undefined)
+}
+
+export async function getAvoidOptions(): Promise<ItemAttribute[]> {
+  const present = new Set<ItemAttribute>()
+  for (const item of items) {
+    for (const attribute of item.attributes) {
+      present.add(attribute)
+    }
+  }
+  return [...present].sort()
+}
+
+export async function getStylistVocabulary(): Promise<StylistVocabulary> {
+  return {
+    styles: styles.map((style) => ({ slug: style.slug, name: style.name, tagline: style.tagline })),
+    colors: colors.map((color) => ({ slug: color.slug, name: color.name })),
+  }
 }
