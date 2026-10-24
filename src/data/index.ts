@@ -48,3 +48,43 @@ export async function getCategories(): Promise<Category[]> {
 export async function getCategoryBySlug(slug: string): Promise<Category | undefined> {
   return categories.find((category) => category.slug === slug)
 }
+
+export type RelatedOutfit = { outfit: Outfit; relation: 'contains-item' | 'same-style' }
+
+export async function getOutfitsForStyle(styleSlug: string): Promise<Outfit[]> {
+  return outfits.filter((outfit) => outfit.styleSlugs.includes(styleSlug))
+}
+
+export async function getRelatedOutfits(itemSlug: string): Promise<RelatedOutfit[]> {
+  const direct = outfits
+    .filter((outfit) => outfit.itemSlugs.includes(itemSlug))
+    .map((outfit): RelatedOutfit => ({ outfit, relation: 'contains-item' }))
+
+  if (direct.length >= 2) {
+    return direct
+  }
+
+  const item = items.find((candidate) => candidate.slug === itemSlug)
+  if (!item) {
+    return direct
+  }
+
+  const includedSlugs = new Set(direct.map((related) => related.outfit.slug))
+  const topUp: RelatedOutfit[] = []
+
+  for (const outfit of outfits) {
+    if (direct.length + topUp.length >= 2) {
+      break
+    }
+    if (includedSlugs.has(outfit.slug)) {
+      continue
+    }
+    const sharesStyle = outfit.styleSlugs.some((slug) => item.styleSlugs.includes(slug))
+    if (sharesStyle) {
+      includedSlugs.add(outfit.slug)
+      topUp.push({ outfit, relation: 'same-style' })
+    }
+  }
+
+  return [...direct, ...topUp]
+}
