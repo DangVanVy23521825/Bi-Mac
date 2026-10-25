@@ -8,6 +8,8 @@ out/
 
 # testing / coverage
 /coverage
+/test-results
+/playwright-report
 
 # production
 /build
