@@ -1,5 +1,4 @@
 import type { Category, Color, FashionItem, ItemAttribute, Outfit, Story, Style } from '@/types/content'
-import type { StylistVocabulary } from '@/types/stylist'
 import { categories } from './fixtures/categories'
 import { colors } from './fixtures/colors'
 import { items } from './fixtures/items'
@@ -140,11 +139,4 @@ export async function getAvoidOptions(): Promise<ItemAttribute[]> {
     }
   }
   return [...present].sort()
-}
-
-export async function getStylistVocabulary(): Promise<StylistVocabulary> {
-  return {
-    styles: styles.map((style) => ({ slug: style.slug, name: style.name, tagline: style.tagline })),
-    colors: colors.map((color) => ({ slug: color.slug, name: color.name })),
-  }
 }

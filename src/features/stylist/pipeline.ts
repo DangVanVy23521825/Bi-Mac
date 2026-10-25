@@ -59,11 +59,27 @@ export type StylistOutcome = {
   notes: string[]
 }
 
+// The stage-1 payload: everything the `analysis` NDJSON line needs, ready
+// the moment resolveAnalysis + rankOutfits/rankItems have run and before
+// `explain` (the second model call) has even started.
+export type AnalysisStage = {
+  styleDirections: StylistOutcome['styleDirections']
+  palette: StylistOutcome['palette']
+  notes: string[]
+  degraded: boolean
+}
+
 export type StylistDeps = {
   primary: StylistProvider | null
   fallback: StylistProvider
   catalog: StylistCatalog
   timeoutMs?: number
+  // Optional hook fired synchronously, exactly once, right after resolve +
+  // rank and before explain is called — this is what lets a caller (the
+  // route handler) flush a real first NDJSON line instead of buffering
+  // everything until the whole pipeline finishes. Unset → not called,
+  // behavior is identical to before this hook existed.
+  onAnalysis?: (stage: AnalysisStage) => void
 }
 
 // Thrown by `withTimeout` when the wrapped promise doesn't settle in time.
@@ -231,6 +247,38 @@ export async function runStylist(input: StylistInput, deps: StylistDeps): Promis
   const rankedOutfits = rankOutfits(resolved, input.answers, deps.catalog)
   const rankedItems = rankItems(resolved, input.answers, deps.catalog)
 
+  // Everything below is derived from `resolved`/`rankedOutfits` alone — none
+  // of it depends on `explain` — so it is all ready for stage 1 before the
+  // second model call even starts.
+  const notes = [...resolved.notes]
+  if (notes.length === 0) {
+    notes.push(EMPTY_ANALYSIS_NOTE)
+  }
+  if (rankedOutfits.length === 0) {
+    notes.push(NO_OUTFITS_NOTE)
+  }
+
+  const styleDirections = resolved.styleDirections.map((direction) => ({
+    slug: direction.style.slug,
+    name: direction.style.name,
+    affinity: direction.affinity,
+    reason: direction.reason,
+    href: styleHref(direction.style.slug),
+  }))
+
+  const palette = resolved.palette.map((entry) => ({
+    slug: entry.color.slug,
+    name: entry.color.name,
+    hex: entry.color.hex,
+    reason: entry.reason,
+  }))
+
+  // Fire the stage-1 hook now — resolve + rank are done, explain hasn't
+  // been called yet. `degraded` here reflects only the analyze stage;
+  // explain's own degradation (if any) is folded into the final outcome
+  // below, after it resolves.
+  deps.onAnalysis?.({ styleDirections, palette, notes, degraded: analyzeOutcome.degraded })
+
   const explainOutcome = await getExplanations(
     analyzeOutcome.providerUsed,
     rankedOutfits,
@@ -242,14 +290,6 @@ export async function runStylist(input: StylistInput, deps: StylistDeps): Promis
 
   const degraded = analyzeOutcome.degraded || explainOutcome.degraded
   const degradedReason = analyzeOutcome.degradedReason ?? explainOutcome.degradedReason
-
-  const notes = [...resolved.notes]
-  if (notes.length === 0) {
-    notes.push(EMPTY_ANALYSIS_NOTE)
-  }
-  if (rankedOutfits.length === 0) {
-    notes.push(NO_OUTFITS_NOTE)
-  }
 
   const itemBySlug = new Map(deps.catalog.items.map((item) => [item.slug, item]))
 
@@ -276,21 +316,6 @@ export async function runStylist(input: StylistInput, deps: StylistDeps): Promis
     excerpt: item.excerpt,
     image: item.image,
     href: itemHref(item),
-  }))
-
-  const styleDirections = resolved.styleDirections.map((direction) => ({
-    slug: direction.style.slug,
-    name: direction.style.name,
-    affinity: direction.affinity,
-    reason: direction.reason,
-    href: styleHref(direction.style.slug),
-  }))
-
-  const palette = resolved.palette.map((entry) => ({
-    slug: entry.color.slug,
-    name: entry.color.name,
-    hex: entry.color.hex,
-    reason: entry.reason,
   }))
 
   return {

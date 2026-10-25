@@ -3,7 +3,7 @@ import {
   allCategories, allColors, allItems, allOutfits, allStyles,
   getItemBySlug, getFeaturedStories,
   getItemsByCategory, getStylesForItem, getItemsForStyle, getItemsForOutfit,
-  getAvoidOptions, getStylistVocabulary,
+  getAvoidOptions,
 } from '@/data'
 
 describe('repository', () => {
@@ -147,14 +147,5 @@ describe('vocabulary cho stylist', () => {
     expect((await getAvoidOptions()).sort()).toEqual(
       ['clingy', 'sheer', 'sleeveless', 'structured-shoulder'],
     )
-  })
-
-  it('vocabulary chỉ chứa dữ liệu phẳng, không chứa entity', async () => {
-    const vocab = await getStylistVocabulary()
-    expect(vocab.styles.length).toBe(5)
-    expect(vocab.colors.length).toBe(5)
-    const firstColor = vocab.colors[0]
-    expect(firstColor).toBeDefined()
-    expect(Object.keys(firstColor!).sort()).toEqual(['name', 'slug'])
   })
 })

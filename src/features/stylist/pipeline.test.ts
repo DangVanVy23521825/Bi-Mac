@@ -144,6 +144,22 @@ const explainThrowsProvider: StylistProvider = {
   },
 }
 
+// A provider whose `explain` hangs on a caller-held gate — used to prove
+// `onAnalysis` fires before `explain` settles, not after the whole
+// pipeline finishes.
+function createGatedExplainProvider(gate: Promise<void>): StylistProvider {
+  return {
+    id: 'gemini',
+    async analyze(req: AnalyzeRequest) {
+      return okProvider.analyze(req)
+    },
+    async explain(req: ExplainRequest) {
+      await gate
+      return okProvider.explain(req)
+    },
+  }
+}
+
 const fallback = createDeterministicProvider()
 
 const deps: StylistDeps = {
@@ -221,5 +237,43 @@ describe('runStylist', () => {
     )
     expect(outcome.outfits).toEqual([])
     expect(outcome.notes.join(' ')).toMatch(/tránh/i)
+  })
+
+  it('gọi onAnalysis ngay sau resolve+rank, trước khi explain xong (chặng thật)', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const provider = createGatedExplainProvider(gate)
+
+    let explainResolved = false
+    let stageFiredBeforeExplainResolved = false
+
+    const runPromise = runStylist(input, {
+      ...deps,
+      primary: provider,
+      onAnalysis: (stage) => {
+        stageFiredBeforeExplainResolved = !explainResolved
+        expect(stage.styleDirections.length).toBeGreaterThan(0)
+      },
+    }).then((outcome) => {
+      explainResolved = true
+      return outcome
+    })
+
+    // analyze/resolve/rank for this provider are all fast (no real delay),
+    // but `withTimeout` adds its own promise hops around `analyze` — a
+    // macrotask tick is a robust way to let the pipeline reach the hook
+    // while `explain` is still parked on `gate`, without guessing an exact
+    // microtask count.
+    await delay(0)
+
+    expect(stageFiredBeforeExplainResolved).toBe(true)
+    expect(explainResolved).toBe(false)
+
+    release()
+    const outcome = await runPromise
+    expect(explainResolved).toBe(true)
+    expect(outcome.outfits.length).toBeGreaterThan(0)
   })
 })

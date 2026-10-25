@@ -20,10 +20,15 @@
 // The response is NDJSON in two stages, deliberately not token streaming:
 // the AI SDK's own docs note that partial outputs streamed via
 // `streamText` cannot be validated against a schema, so token streaming
-// would push unvalidated catalog slugs to the browser. `runStylist`
-// already returns one fully-validated, catalog-resolved outcome, so this
-// handler's "two stages" are the two NDJSON lines built from that single
-// outcome, written back-to-back on one `ReadableStream`.
+// would push unvalidated catalog slugs to the browser. The two stages are
+// genuinely staged, not just two JSON objects written back-to-back after
+// the whole pipeline finishes: `runStylist` takes an `onAnalysis` hook
+// (see pipeline.ts) fired right after resolve+rank, before `explain` (the
+// second model call) even starts. The `ReadableStream` below is built
+// *before* `runStylist` runs, the `analysis` line is enqueued from inside
+// that hook, and the `result` line is enqueued only once the whole
+// pipeline promise resolves — so a caller reading the stream really does
+// get the first line while the second model call is still in flight.
 //
 // ADR-012: user photos are never stored and never logged. Received in the
 // request, forwarded to a provider, discarded. Nothing here ever passes
@@ -35,7 +40,7 @@
 
 import { allColors, allItems, allOutfits, allStyles } from '@/data'
 import { stylistInputSchema, type StylistInput } from '@/features/stylist/input'
-import { runStylist, type StylistDeps, type StylistOutcome } from '@/features/stylist/pipeline'
+import { runStylist, type DegradedReason, type StylistDeps } from '@/features/stylist/pipeline'
 import type { StylistCatalog } from '@/features/stylist/resolve'
 import { createDeterministicProvider } from '@/lib/ai/deterministic'
 import { createGeminiProvider } from '@/lib/ai/gemini'
@@ -105,29 +110,56 @@ function isFileLike(value: FormDataEntryValue | null): value is File {
   )
 }
 
-function buildStream(outcome: StylistOutcome): ReadableStream<Uint8Array> {
-  const analysisLine = {
-    type: 'analysis' as const,
-    styleDirections: outcome.styleDirections,
-    palette: outcome.palette,
-    notes: outcome.notes,
-    degraded: outcome.degraded,
-  }
-  const resultLine = {
-    type: 'result' as const,
-    outfits: outcome.outfits,
-    items: outcome.items,
-    providerId: outcome.providerId,
-    degraded: outcome.degraded,
-    degradedReason: outcome.degradedReason,
-  }
-
+// Builds the two-stage NDJSON stream. `input`/`deps` are passed through
+// rather than a finished `StylistOutcome`, because there is no finished
+// outcome yet when this stream starts — `runStylist` is kicked off *inside*
+// `start()`, and the `analysis` line is written from the `onAnalysis` hook
+// while `explain` (the second model call) is still running. The `result`
+// line is written only when the pipeline promise settles.
+//
+// `degradedReasonOverride` carries the route's rate-limit correction (see
+// the call site below): `runStylist` cannot tell "no key" apart from
+// "rate-limited" on its own, since both arrive as `primary: null`.
+function createStylistStream(
+  input: StylistInput,
+  deps: StylistDeps,
+  degradedReasonOverride: DegradedReason,
+): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder()
+
   return new ReadableStream<Uint8Array>({
     start(controller) {
-      controller.enqueue(encoder.encode(`${JSON.stringify(analysisLine)}\n`))
-      controller.enqueue(encoder.encode(`${JSON.stringify(resultLine)}\n`))
-      controller.close()
+      const streamingDeps: StylistDeps = {
+        ...deps,
+        onAnalysis: (stage) => {
+          const analysisLine = { type: 'analysis' as const, ...stage }
+          controller.enqueue(encoder.encode(`${JSON.stringify(analysisLine)}\n`))
+        },
+      }
+
+      runStylist(input, streamingDeps)
+        .then((outcome) => {
+          const resultLine = {
+            type: 'result' as const,
+            outfits: outcome.outfits,
+            items: outcome.items,
+            providerId: outcome.providerId,
+            degraded: outcome.degraded,
+            degradedReason: degradedReasonOverride ?? outcome.degradedReason,
+          }
+          controller.enqueue(encoder.encode(`${JSON.stringify(resultLine)}\n`))
+          controller.close()
+        })
+        .catch(() => {
+          // `runStylist` already catches every provider-level failure and
+          // degrades gracefully internally; reaching here means something
+          // outside that contract broke. Never log or forward the error
+          // object itself (ADR-012 — it could in principle be wrapping
+          // input data) — only this static reason string — and close the
+          // stream instead of leaving the client hanging forever.
+          console.error('stylist-pipeline-unexpected-error')
+          controller.error(new Error('stylist-pipeline-unexpected-error'))
+        })
     },
   })
 }
@@ -194,18 +226,19 @@ export async function POST(request: Request): Promise<Response> {
     timeoutMs: STYLIST_TIMEOUT_MS,
   }
 
-  const outcome = await runStylist(input, deps)
-
   // `runStylist` always reports `degradedReason: 'no-key'` whenever
   // `primary` is null (see pipeline.ts) because it has no way to know
   // *why* the caller passed null. When the real reason was a rate limit,
-  // this route — the only place that knows that — corrects the label
-  // before anything is sent, so the response tells the truth.
-  const finalOutcome: StylistOutcome = rateLimited
-    ? { ...outcome, degraded: true, degradedReason: 'rate-limited' }
-    : outcome
+  // this route — the only place that knows that — corrects the label on
+  // the `result` line before it is sent, so the response tells the truth.
+  // (The `analysis` line never carries `degradedReason`, so there is
+  // nothing to correct there — see the wire format in the module doc
+  // comment above.)
+  const degradedReasonOverride: DegradedReason = rateLimited ? 'rate-limited' : null
 
-  return new Response(buildStream(finalOutcome), {
+  const stream = createStylistStream(input, deps, degradedReasonOverride)
+
+  return new Response(stream, {
     status: 200,
     headers: { 'content-type': 'application/x-ndjson' },
   })

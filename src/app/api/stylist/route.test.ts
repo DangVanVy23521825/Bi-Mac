@@ -12,7 +12,44 @@
 // test name doesn't change mid-test. The global daily counter is shared
 // across the whole file regardless, but DAILY_LIMIT (200) is far above the
 // handful of requests this suite issues, so it never interferes.
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Gate used by exactly one test below ("chặng thật") to hold `explain`
+// open while asserting the `analysis` NDJSON line already arrived. Every
+// other test in this file goes through the *real* deterministic provider
+// (no API key is set anywhere in this suite), so the gate must default to
+// an already-resolved promise — `await Promise.resolve()` is a single
+// microtask, invisible to every test that doesn't touch it. `vi.hoisted`
+// is required here because `vi.mock` factories are hoisted above normal
+// module code by Vitest's transform, so a plain top-level `let` would not
+// yet exist when the factory runs.
+const { getExplainGate, setExplainGate } = vi.hoisted(() => {
+  let gate: Promise<void> = Promise.resolve()
+  return {
+    getExplainGate: () => gate,
+    setExplainGate: (next: Promise<void>) => {
+      gate = next
+    },
+  }
+})
+
+vi.mock('@/lib/ai/deterministic', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/ai/deterministic')>()
+  return {
+    ...actual,
+    createDeterministicProvider: () => {
+      const real = actual.createDeterministicProvider()
+      return {
+        ...real,
+        explain: async (req: Parameters<typeof real.explain>[0]) => {
+          await getExplainGate()
+          return real.explain(req)
+        },
+      }
+    },
+  }
+})
+
 import { MAX_PHOTO_BYTES, PER_IP_LIMIT, POST } from './route'
 
 const validAnswers = JSON.stringify({
@@ -63,6 +100,10 @@ async function ndjson(res: Response): Promise<Array<Record<string, unknown>>> {
 }
 
 describe('POST /api/stylist', () => {
+  beforeEach(() => {
+    setExplainGate(Promise.resolve())
+  })
+
   it('trả 400 khi answers không hợp schema', async () => {
     const res = await POST(formRequest({ answers: '{"occasions":[]}' }))
     expect(res.status).toBe(400)
@@ -133,5 +174,45 @@ describe('POST /api/stylist', () => {
         expect(JSON.stringify(call)).not.toMatch(/Uint8Array|base64,|\[object ArrayBuffer\]/)
       }
     }
+  })
+
+  // The distinguishing test for genuine two-stage streaming: gates the
+  // (only ever-used-here, no key in this suite) deterministic provider's
+  // `explain` on a promise we hold open, reads the stream chunk-by-chunk,
+  // and asserts the `analysis` line is already on the wire while `result`
+  // is still unresolved — not just that the final body happens to contain
+  // two lines in order.
+  it('gửi dòng analysis trong khi explain còn treo, rồi mới gửi result (chặng thật)', async () => {
+    let release: () => void = () => {}
+    setExplainGate(
+      new Promise((resolve) => {
+        release = resolve
+      }),
+    )
+
+    const res = await POST(formRequest({ answers: validAnswers }))
+    expect(res.status).toBe(200)
+    const reader = res.body!.getReader()
+
+    const first = await reader.read()
+    expect(first.done).toBe(false)
+    const firstLine = JSON.parse(new TextDecoder().decode(first.value).trim()) as Record<string, unknown>
+    expect(firstLine.type).toBe('analysis')
+
+    // `explain` is still parked on the gate — the next chunk must not be
+    // ready yet. Hold the pending `read()` promise itself (don't start a
+    // fresh one after releasing) so we can observe its eventual value.
+    const secondReadPromise = reader.read()
+    const raceOutcome = await Promise.race([
+      secondReadPromise.then(() => 'arrived' as const),
+      new Promise<'still-pending'>((resolve) => setTimeout(() => resolve('still-pending'), 50)),
+    ])
+    expect(raceOutcome).toBe('still-pending')
+
+    release()
+    const second = await secondReadPromise
+    expect(second.done).toBe(false)
+    const secondLine = JSON.parse(new TextDecoder().decode(second.value).trim()) as Record<string, unknown>
+    expect(secondLine.type).toBe('result')
   })
 })
