@@ -50,6 +50,37 @@ vi.mock('@/lib/ai/deterministic', async (importOriginal) => {
   }
 })
 
+// Flag used by exactly one test below to force `runStylist` to reject
+// unexpectedly, so the `.catch()` branch in `createStylistStream` — the
+// only `console.error` call site in route.ts — actually runs at least
+// once. `route.ts` builds its own providers and has no injection seam for
+// the pipeline itself, so mocking the pipeline module (mirroring the
+// `explainGate` pattern above, the least invasive option available) is
+// how the test reaches that branch at all. Default `false` is a no-op
+// passthrough to the real `runStylist` for every other test.
+const { shouldRejectPipeline, setShouldRejectPipeline } = vi.hoisted(() => {
+  let reject = false
+  return {
+    shouldRejectPipeline: () => reject,
+    setShouldRejectPipeline: (next: boolean) => {
+      reject = next
+    },
+  }
+})
+
+vi.mock('@/features/stylist/pipeline', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/stylist/pipeline')>()
+  return {
+    ...actual,
+    runStylist: async (...args: Parameters<typeof actual.runStylist>) => {
+      if (shouldRejectPipeline()) {
+        throw new Error('simulated-unexpected-pipeline-failure')
+      }
+      return actual.runStylist(...args)
+    },
+  }
+})
+
 import { MAX_PHOTO_BYTES, PER_IP_LIMIT, POST } from './route'
 
 const validAnswers = JSON.stringify({
@@ -102,6 +133,7 @@ async function ndjson(res: Response): Promise<Array<Record<string, unknown>>> {
 describe('POST /api/stylist', () => {
   beforeEach(() => {
     setExplainGate(Promise.resolve())
+    setShouldRejectPipeline(false)
   })
 
   it('trả 400 khi answers không hợp schema', async () => {
@@ -172,6 +204,33 @@ describe('POST /api/stylist', () => {
     for (const s of [spy, errSpy]) {
       for (const call of s.mock.calls) {
         expect(JSON.stringify(call)).not.toMatch(/Uint8Array|base64,|\[object ArrayBuffer\]/)
+      }
+    }
+  })
+
+  // The test above only proves the success path never logs bytes — but
+  // the *only* `console.error` call site in route.ts is the `.catch()`
+  // branch for an unexpected `runStylist` rejection, which that test never
+  // triggers. A test that never exercises the one risky branch is a guard
+  // that can never fail, no matter what that branch does — so this test
+  // forces the rejection (via the pipeline mock above) and asserts
+  // `console.error` was *actually called* before checking its arguments
+  // are clean. Without the "was called" assertion this would be exactly
+  // as vacuous as a zero-call pass.
+  it('nhánh lỗi ngoài dự tính: console.error được gọi thật và không rò bytes ảnh', async () => {
+    setShouldRejectPipeline(true)
+    const spy = vi.spyOn(console, 'log')
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const res = await POST(formRequest({ answers: validAnswers, photo: file('a.jpg', 'image/jpeg', 32) }))
+    expect(res.status).toBe(200)
+    const reader = res.body!.getReader()
+    await expect(reader.read()).rejects.toThrow()
+
+    expect(errSpy).toHaveBeenCalled()
+    for (const s of [spy, errSpy]) {
+      for (const call of s.mock.calls) {
+        expect(JSON.stringify(call)).not.toMatch(/Uint8Array|base64,|\[object ArrayBuffer\]|ArrayBuffer/)
       }
     }
   })
