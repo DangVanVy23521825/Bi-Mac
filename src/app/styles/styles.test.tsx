@@ -11,6 +11,15 @@ describe('trang styles', () => {
       '/styles/quiet-luxury',
     )
   })
+
+  // Fix wave review item 8: mỗi thẻ style từng bọc trong một <Link> trần,
+  // không có <article> — mất landmark so với CategoryItemRow (dùng ở
+  // trang category), nơi <article> bọc ngoài và <Link> chỉ bọc phần nội
+  // dung bấm được. Test này khoá đúng số landmark khớp số style.
+  it('mỗi style là một landmark article, khớp CategoryItemRow', async () => {
+    render(await StylesPage())
+    expect(screen.getAllByRole('article').length).toBe(5)
+  })
 })
 
 describe('trang style detail', () => {

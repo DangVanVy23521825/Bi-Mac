@@ -11,19 +11,17 @@ export default async function StylesPage() {
       <SectionHeading eyebrow="Phối theo style" title="Năm hướng style" />
       <div className="mt-4 space-y-16">
         {styles.map((style) => (
-          <Link
-            key={style.slug}
-            href={`/styles/${style.slug}`}
-            className="group grid gap-6 sm:grid-cols-5 sm:items-center"
-          >
+          <article key={style.slug} className="grid gap-6 sm:grid-cols-5 sm:items-center">
             <div className="sm:col-span-2">
               <EditorialImage src={style.image} alt={style.name} ratio="look" />
             </div>
             <div className="sm:col-span-3">
-              <h3 className="font-display text-3xl group-hover:text-accent">{style.name}</h3>
-              <p className="mt-3 max-w-md font-body text-base text-accent-soft">{style.tagline}</p>
+              <Link href={`/styles/${style.slug}`} className="group block">
+                <h3 className="font-display text-3xl group-hover:text-accent">{style.name}</h3>
+                <p className="mt-3 max-w-md font-body text-base text-accent-soft">{style.tagline}</p>
+              </Link>
             </div>
-          </Link>
+          </article>
         ))}
       </div>
     </div>
