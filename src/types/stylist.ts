@@ -19,7 +19,17 @@ export type OutfitDescriptor = {
   styleNames: string[]
 }
 
-export type Occasion = 'work' | 'school' | 'casual' | 'date' | 'event'
+// `OCCASIONS` is the one place this value exists. `Occasion` is derived
+// from it, not the other way around, so every mirror below (the Zod enum
+// in `src/features/stylist/input.ts`, the checkbox order in
+// `Questionnaire.tsx`, the fixture-coverage tests in `catalog.test.ts` and
+// `rank.test.ts`) can import the array instead of re-typing its members.
+// A `Record<Occasion, …>` (e.g. `OCCASION_LABEL`, `OCCASION_STYLE`) stays
+// exhaustive under `tsc` on its own and does not need this — only the
+// *plain arrays* silently fell behind on an addition (renames were
+// already caught: `tsc` flags a key that no longer exists).
+export const OCCASIONS = ['work', 'school', 'casual', 'date', 'event'] as const
+export type Occasion = (typeof OCCASIONS)[number]
 export type Fit = 'fitted' | 'relaxed' | 'oversized'
 export type ItemAttribute =
   | 'sleeveless' | 'sheer' | 'clingy' | 'structured-shoulder'

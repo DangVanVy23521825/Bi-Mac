@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { allColors, allItems, allOutfits, allStyles } from '@/data'
 import type { FashionItem, Outfit } from '@/types/content'
-import type { StylistAnswers } from '@/types/stylist'
+import { OCCASIONS, type StylistAnswers } from '@/types/stylist'
 import type { ResolvedAnalysis, StylistCatalog } from '@/features/stylist/resolve'
 import { rankItems, rankOutfits } from '@/features/stylist/rank'
 
@@ -55,7 +55,7 @@ function analysisWeighted(targetStyleSlug: string): ResolvedAnalysis {
 
 function answers(overrides: Partial<StylistAnswers> = {}): StylistAnswers {
   return {
-    occasions: ['work', 'school', 'casual', 'date', 'event'],
+    occasions: [...OCCASIONS],
     fitPreference: 'unsure',
     avoids: [],
     goal: 'outfits',
@@ -86,7 +86,7 @@ describe('rankOutfits', () => {
   })
 
   it('mỗi dịp mặc đơn lẻ vẫn ra ít nhất 2 outfit', () => {
-    for (const occasion of ['work', 'school', 'casual', 'date', 'event'] as const) {
+    for (const occasion of OCCASIONS) {
       const ranked = rankOutfits(analysisAll, answers({ occasions: [occasion] }), catalog, 10)
       expect(ranked.length, `dịp ${occasion}`).toBeGreaterThanOrEqual(2)
     }

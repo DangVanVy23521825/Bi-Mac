@@ -7,10 +7,13 @@
 // `src/lib/ai/`, and discarded — no path, no URL, no id.
 
 import { z } from 'zod'
-import type { Fit, ItemAttribute, Occasion, StylistAnswers } from '@/types/stylist'
+import { OCCASIONS, type Fit, type ItemAttribute, type StylistAnswers } from '@/types/stylist'
 import { ALLOWED_PHOTO_TYPES } from './photo-limits'
 
-const occasionValues: [Occasion, ...Occasion[]] = ['work', 'school', 'casual', 'date', 'event']
+// `OCCASIONS` (a const array, not just the `Occasion` type) is imported
+// so adding a member there is enough to widen this schema too — a plain
+// re-typed array here would have silently stayed narrow (see
+// `src/types/stylist.ts`'s comment on why this one had to move).
 const fitValues: [Fit, ...Fit[]] = ['fitted', 'relaxed', 'oversized']
 const itemAttributeValues: [ItemAttribute, ...ItemAttribute[]] = [
   'sleeveless',
@@ -29,7 +32,7 @@ const photoSchema = z.object({
 })
 
 export const stylistAnswersSchema = z.object({
-  occasions: z.array(z.enum(occasionValues)).min(1),
+  occasions: z.array(z.enum(OCCASIONS)).min(1),
   fitPreference: z.union([z.enum(fitValues), z.literal('unsure')]),
   avoids: z.array(z.enum(itemAttributeValues)).default([]),
   goal: z.enum(['style', 'outfits', 'colors', 'wardrobe-refresh']),

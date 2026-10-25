@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { allCategories, allItems, allOutfits, getRelatedOutfits } from '@/data'
+import { OCCASIONS } from '@/types/stylist'
 
 describe('khối lượng catalog v1', () => {
   it('có đúng 15 item', () => {
@@ -49,8 +50,7 @@ describe('ràng buộc suất outfit', () => {
   })
 
   it('mọi dịp mặc có ít nhất 2 outfit', () => {
-    const occasions = ['work', 'school', 'casual', 'date', 'event'] as const
-    for (const occasion of occasions) {
+    for (const occasion of OCCASIONS) {
       const count = allOutfits.filter((o) => o.occasions.includes(occasion)).length
       expect(count, `dịp ${occasion}`).toBeGreaterThanOrEqual(2)
     }

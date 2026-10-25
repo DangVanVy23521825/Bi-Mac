@@ -10,7 +10,7 @@
 // nhất, đừng chép lại nơi khác.
 
 import { useId, useRef, useState } from 'react'
-import type { Fit, ItemAttribute, Occasion, StylistAnswers } from '@/types/stylist'
+import { OCCASIONS, type Fit, type ItemAttribute, type Occasion, type StylistAnswers } from '@/types/stylist'
 import { OCCASION_LABEL } from '@/components/wardrobe/ItemFacts'
 import { ALLOWED_PHOTO_TYPES, MAX_PHOTO_BYTES } from '@/features/stylist/photo-limits'
 
@@ -25,7 +25,11 @@ export const ATTRIBUTE_LABEL: Record<ItemAttribute, string> = {
   'bright-color': 'Màu rực',
 }
 
-const OCCASION_ORDER: Occasion[] = ['work', 'school', 'casual', 'date', 'event']
+// Checkbox order on the form — derived from `OCCASIONS` (the single
+// source of truth in `src/types/stylist.ts`) so adding a new `Occasion`
+// value automatically gets a checkbox instead of silently staying off
+// the form.
+const OCCASION_ORDER = OCCASIONS
 
 const FIT_OPTIONS: Array<{ value: Fit | 'unsure'; label: string }> = [
   { value: 'fitted', label: 'Ôm vừa dáng' },

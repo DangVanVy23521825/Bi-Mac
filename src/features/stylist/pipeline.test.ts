@@ -5,6 +5,7 @@ import type { AnalyzeRequest, ExplainRequest, StylistProvider } from '@/lib/ai/p
 import type { StylistCatalog } from '@/features/stylist/resolve'
 import type { StylistInput } from '@/features/stylist/input'
 import { runStylist, type StylistDeps } from '@/features/stylist/pipeline'
+import { OCCASIONS } from '@/types/stylist'
 
 const catalog: StylistCatalog = {
   items: allItems,
@@ -254,7 +255,7 @@ describe('runStylist', () => {
     // Dùng riêng từng dịp mặc (không gộp 'work' + 'casual' như `input`
     // dùng chung ở trên) — nếu gộp, một dịp vẫn còn slug đúng có thể che
     // mất lệch slug ở dịp khác. Mỗi dịp phải tự đứng được.
-    for (const occasion of ['work', 'school', 'casual', 'date', 'event'] as const) {
+    for (const occasion of OCCASIONS) {
       const outcome = await runStylist(
         { answers: { occasions: [occasion], fitPreference: 'unsure', avoids: [], goal: 'style' } },
         { ...deps, primary: null },

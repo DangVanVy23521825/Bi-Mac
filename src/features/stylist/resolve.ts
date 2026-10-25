@@ -55,7 +55,15 @@ export function resolveAnalysis(analysis: StylistAnalysis, catalog: StylistCatal
     if (b.affinity !== a.affinity) {
       return b.affinity - a.affinity
     }
-    return a.style.slug.localeCompare(b.style.slug)
+    // Ordinal, not `localeCompare` — `rank.ts`'s `bySlugAscending` ties
+    // the exact same slugs this way, and `localeCompare` with no explicit
+    // locale depends on the runtime's ICU locale, which would let the two
+    // tie-break the same slugs differently depending on where the server
+    // runs. Slugs are ASCII (kebab-case), so ordinal `<`/`>` is also just
+    // simpler.
+    if (a.style.slug < b.style.slug) return -1
+    if (a.style.slug > b.style.slug) return 1
+    return 0
   })
 
   const seenColorSlugs = new Set<string>()
