@@ -1,11 +1,13 @@
 // StylistInput schema — the request shape accepted at the AI Stylist route
 // boundary. This module sits on the catalog side of §7's boundary and may
-// import `Occasion`/`Fit`/`ItemAttribute` from `src/types/content.ts`.
+// import `Occasion`/`Fit`/`ItemAttribute` (and `StylistAnswers`, built from
+// them) from `src/types/stylist.ts` — the single shared definition used on
+// both sides of the `src/lib/ai/` boundary.
 // The photo is never stored: it is validated here, sent to a provider in
 // `src/lib/ai/`, and discarded — no path, no URL, no id.
 
 import { z } from 'zod'
-import type { Fit, ItemAttribute, Occasion } from '@/types/content'
+import type { Fit, ItemAttribute, Occasion, StylistAnswers } from '@/types/stylist'
 
 const occasionValues: [Occasion, ...Occasion[]] = ['work', 'school', 'casual', 'date', 'event']
 const fitValues: [Fit, ...Fit[]] = ['fitted', 'relaxed', 'oversized']
@@ -32,12 +34,7 @@ export const stylistAnswersSchema = z.object({
   goal: z.enum(['style', 'outfits', 'colors', 'wardrobe-refresh']),
 })
 
-export type StylistAnswers = {
-  occasions: Occasion[]
-  fitPreference: Fit | 'unsure'
-  avoids: ItemAttribute[]
-  goal: 'style' | 'outfits' | 'colors' | 'wardrobe-refresh'
-}
+export type { StylistAnswers }
 
 export const stylistInputSchema = z.object({
   answers: stylistAnswersSchema,

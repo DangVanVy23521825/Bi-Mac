@@ -1,12 +1,13 @@
+// Occasion/Fit/ItemAttribute are shared vocabulary with `src/lib/ai` (via
+// `src/features/stylist`), so they are defined in `src/types/stylist.ts`
+// (which has zero imports) and re-exported here rather than duplicated.
+import type { Fit, ItemAttribute, Occasion } from './stylist'
+
+export type { Occasion, Fit, ItemAttribute }
+
 export type CategorySlug = 'tops' | 'bottoms' | 'dresses' | 'outerwear' | 'accessories'
 
 export type Color = { slug: string; name: string; hex: string }
-
-export type Occasion = 'work' | 'school' | 'casual' | 'date' | 'event'
-export type Fit = 'fitted' | 'relaxed' | 'oversized'
-export type ItemAttribute =
-  | 'sleeveless' | 'sheer' | 'clingy' | 'structured-shoulder'
-  | 'cropped' | 'high-heel' | 'short-hem' | 'bright-color'
 
 export type Category = { slug: CategorySlug; name: string; intro: string }
 
