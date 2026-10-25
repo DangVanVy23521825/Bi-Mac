@@ -177,6 +177,25 @@ describe('createDeterministicProvider', () => {
     expect(joined).toMatch(/dự phòng/)
   })
 
+  // Khôi phục: bị thay bằng test "phân biệt được sau khi lược tên" ngay
+  // dưới đây thay vì giữ cả hai — hai test kiểm hai thuộc tính khác nhau.
+  // Test này: mỗi reason phải GỌI ĐÚNG TÊN màu nó đang nói tới (không phải
+  // lý do chung chung không gắn với màu nào cụ thể). Test dưới: các reason
+  // khác nhau phải khác nhau ở phần còn lại sau khi lược tên, không chỉ
+  // khác nhau vì nội suy tên vào một template giống nhau. Thiếu test này,
+  // một implementation trả cùng một câu "chung" cho mọi màu (chỉ khác ở
+  // việc có chứa tên màu ở đâu đó không liên quan) vẫn có thể qua được
+  // test "phân biệt" nếu phần còn lại ngẫu nhiên khác nhau.
+  it('palette: mỗi reason gọi đúng tên màu của chính nó', async () => {
+    const analysis = await provider.analyze(request())
+    expect(analysis.palette.length).toBeGreaterThan(0)
+    for (const entry of analysis.palette) {
+      const color = vocabulary.colors.find((c) => c.slug === entry.colorSlug)
+      expect(color, `colorSlug ${entry.colorSlug}`).toBeDefined()
+      expect(entry.reason, `màu ${entry.colorSlug}`).toContain(color!.name)
+    }
+  })
+
   it('palette: lược tên màu của chính nó rồi vẫn phân biệt được — không phải "distinct" giả do nội suy tên', async () => {
     // Nội suy color.name vào một template y nhau cũng làm mọi filler trông
     // "distinct". Discriminator thật: lược tên của CHÍNH màu đó ra khỏi
