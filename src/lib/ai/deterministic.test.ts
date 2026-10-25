@@ -124,11 +124,61 @@ describe('createDeterministicProvider', () => {
     expect(affinities).toEqual([0.8, 0.6, 0.4].slice(0, affinities.length))
   })
 
+  it('đa-dịp: thứ tự caller có ý nghĩa (ghim hành vi thật của code, không phải lựa chọn tuỳ ý)', async () => {
+    const workThenDate = await provider.analyze(withOccasions(['work', 'date']))
+    const dateThenWork = await provider.analyze(withOccasions(['date', 'work']))
+    expect(workThenDate.styleDirections.map((d) => d.styleSlug)).toEqual([
+      'modern-classic',
+      'minimalist',
+      'quiet-luxury',
+    ])
+    expect(dateThenWork.styleDirections.map((d) => d.styleSlug)).toEqual([
+      'soft-feminine',
+      'quiet-luxury',
+      'casual-chic',
+    ])
+  })
+
+  it('đa-dịp: first-occurrence-wins, slug trùng giữa hai bảng chỉ xuất hiện một lần ở vị trí của lần gặp đầu', async () => {
+    // work: ['modern-classic', 'minimalist', 'quiet-luxury']
+    // casual: ['casual-chic', 'quiet-luxury', 'modern-classic']
+    // 'quiet-luxury' và 'modern-classic' đều có mặt trong cả hai bảng; vì
+    // 'work' được gặp trước, thứ hạng của chúng phải đến từ vị trí trong
+    // bảng 'work', và mỗi slug chỉ được xuất hiện đúng một lần ở kết quả.
+    const analysis = await provider.analyze(withOccasions(['work', 'casual']))
+    const slugs = analysis.styleDirections.map((d) => d.styleSlug)
+    expect(slugs).toEqual(['modern-classic', 'minimalist', 'quiet-luxury'])
+    expect(new Set(slugs).size).toBe(slugs.length)
+  })
+
+  it('đa-dịp: vẫn tất định cho cùng một mảng dịp nhiều phần tử', async () => {
+    const first = await provider.analyze(withOccasions(['work', 'date']))
+    const second = await provider.analyze(withOccasions(['work', 'date']))
+    expect(first).toEqual(second)
+  })
+
+  it('đa-dịp: styleDirections không vượt quá 3 dù ba dịp gộp lại cho 9 ứng viên', async () => {
+    const analysis = await provider.analyze(withOccasions(['work', 'date', 'event']))
+    expect(analysis.styleDirections.length).toBeLessThanOrEqual(3)
+  })
+
   it('notes nêu rõ đây là kết quả từ chế độ dự phòng', async () => {
     const analysis = await provider.analyze(request())
     expect(analysis.notes.length).toBeGreaterThan(0)
     const joined = analysis.notes.join(' ')
     expect(joined).toMatch(/dự phòng/)
+  })
+
+  it('palette: reason của mỗi màu khác nhau, không lặp y nguyên filler chung', async () => {
+    const analysis = await provider.analyze(request())
+    expect(analysis.palette.length).toBeGreaterThan(1)
+    const reasons = analysis.palette.map((p) => p.reason)
+    expect(new Set(reasons).size).toBe(reasons.length)
+    for (const entry of analysis.palette) {
+      const color = vocabulary.colors.find((c) => c.slug === entry.colorSlug)
+      expect(color).toBeDefined()
+      if (color) expect(entry.reason).toContain(color.name)
+    }
   })
 
   it('chỉ giải thích đúng các outfit được hỏi', async () => {

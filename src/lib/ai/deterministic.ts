@@ -73,8 +73,28 @@ function buildStyleReason(
   return `${style.name} khớp với ${formatOccasions(occasions)} bạn đã chọn: ${style.tagline}`
 }
 
-function buildColorReason(color: StylistVocabulary['colors'][number]): string {
-  return `${color.name} là một tông nền trong catalog hiện có, phối được với nhiều outfit mà không cần thêm màu thứ tư.`
+function buildColorReason(
+  color: StylistVocabulary['colors'][number],
+  index: number,
+  palette: StylistVocabulary['colors'],
+): string {
+  if (palette.length === 1) {
+    return `${color.name} là tông duy nhất trong palette gợi ý lần này, nên mọi món đều quy về một màu để giữ outfit yên tĩnh.`
+  }
+
+  const base = palette[0]
+  const baseName = base?.name ?? color.name
+
+  if (index === 0) {
+    const rest = palette.slice(1).map((c) => c.name).join(', ')
+    return `${color.name} làm tông nền của palette gợi ý lần này, đứng trước ${rest} để các màu còn lại ăn theo mà không tạo tương phản mạnh.`
+  }
+
+  if (index === palette.length - 1) {
+    return `${color.name} khép lại palette sau ${baseName}, làm điểm neo thứ ${index + 1} mà không kéo thêm màu thứ tư vào set.`
+  }
+
+  return `${color.name} nằm giữa ${baseName} và điểm neo cuối của palette, nối tông nền với phần còn lại mà không tách thành một màu rời.`
 }
 
 async function analyze(req: AnalyzeRequest): Promise<StylistAnalysis> {
@@ -95,9 +115,10 @@ async function analyze(req: AnalyzeRequest): Promise<StylistAnalysis> {
     ]
   })
 
-  const palette = req.vocabulary.colors.slice(0, 3).map((color) => ({
+  const selectedColors = req.vocabulary.colors.slice(0, 3)
+  const palette = selectedColors.map((color, index) => ({
     colorSlug: color.slug,
-    reason: buildColorReason(color),
+    reason: buildColorReason(color, index, selectedColors),
   }))
 
   return {
