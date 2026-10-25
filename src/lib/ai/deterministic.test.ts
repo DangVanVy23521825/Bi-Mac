@@ -157,9 +157,17 @@ describe('createDeterministicProvider', () => {
     expect(first).toEqual(second)
   })
 
-  it('đa-dịp: styleDirections không vượt quá 3 dù ba dịp gộp lại cho 9 ứng viên', async () => {
+  it('đa-dịp: styleDirections không vượt quá 3 dù ba dịp gộp lại cho 9 ứng viên, và đúng 3 slug theo đúng vị trí', async () => {
+    // work: modern-classic, minimalist, quiet-luxury
+    // date: soft-feminine, quiet-luxury (seen), casual-chic
+    // event: quiet-luxury (seen), modern-classic (seen), soft-feminine (seen)
+    // => 5 slug duy nhất trước khi cắt, slice(0,3) phải ra đúng 3 slug đầu của work, đúng vị trí.
     const analysis = await provider.analyze(withOccasions(['work', 'date', 'event']))
-    expect(analysis.styleDirections.length).toBeLessThanOrEqual(3)
+    expect(analysis.styleDirections.map((d) => d.styleSlug)).toEqual([
+      'modern-classic',
+      'minimalist',
+      'quiet-luxury',
+    ])
   })
 
   it('notes nêu rõ đây là kết quả từ chế độ dự phòng', async () => {
@@ -169,16 +177,21 @@ describe('createDeterministicProvider', () => {
     expect(joined).toMatch(/dự phòng/)
   })
 
-  it('palette: reason của mỗi màu khác nhau, không lặp y nguyên filler chung', async () => {
+  it('palette: lược tên màu của chính nó rồi vẫn phân biệt được — không phải "distinct" giả do nội suy tên', async () => {
+    // Nội suy color.name vào một template y nhau cũng làm mọi filler trông
+    // "distinct". Discriminator thật: lược tên của CHÍNH màu đó ra khỏi
+    // reason, chuẩn hoá khoảng trắng, rồi mới so các chuỗi còn lại —
+    // template filler cũ sẽ trùng khít sau khi lược tên; mô tả vai trò
+    // (nền / giữa / điểm neo cuối) thì không.
     const analysis = await provider.analyze(request())
     expect(analysis.palette.length).toBeGreaterThan(1)
-    const reasons = analysis.palette.map((p) => p.reason)
-    expect(new Set(reasons).size).toBe(reasons.length)
-    for (const entry of analysis.palette) {
+    const stripped = analysis.palette.map((entry) => {
       const color = vocabulary.colors.find((c) => c.slug === entry.colorSlug)
-      expect(color).toBeDefined()
-      if (color) expect(entry.reason).toContain(color.name)
-    }
+      const ownName = color?.name ?? ''
+      const withoutOwnName = ownName ? entry.reason.split(ownName).join('') : entry.reason
+      return withoutOwnName.replace(/\s+/g, ' ').trim()
+    })
+    expect(new Set(stripped).size).toBe(stripped.length)
   })
 
   it('chỉ giải thích đúng các outfit được hỏi', async () => {
