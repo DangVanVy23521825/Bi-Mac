@@ -183,6 +183,7 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
           type="file"
           accept={ACCEPTED_PHOTO_TYPES}
           onChange={handlePhotoChange}
+          className="block w-full max-w-full"
         />
         {photo && (
           <div className="flex items-center gap-3 font-body text-sm text-accent-soft">

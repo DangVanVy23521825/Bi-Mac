@@ -27,6 +27,13 @@ export default defineConfig({
     },
   ],
   webServer: {
+    // reuseExistingServer is true outside CI, so a `pnpm dev` already
+    // running on :3000 with a real key would be reused instead of the
+    // keyless server above — but that is not a silent hole: the demo-path
+    // test asserts the fallback banner (`role="status"`, "dự phòng") is
+    // visible, which only renders when no primary Gemini provider was
+    // constructed. A reused real-key server fails that assertion loudly
+    // instead of quietly skipping the no-key guarantee.
     command: 'bash e2e/run-server-without-key.sh',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
