@@ -52,7 +52,24 @@ export const PER_IP_LIMIT = 5
 export const PER_IP_WINDOW_MS = 600_000
 export const DAILY_LIMIT = 200
 const DAILY_WINDOW_MS = 24 * 60 * 60 * 1000
+// Text-only budget: the `analyze` call with no photo attached, and the
+// `explain` call always (it never carries a photo — see
+// `buildExplainContent` in `src/lib/ai/gemini.ts`). Measured against the
+// real Gemini provider, a text-only analyze call finishes in ~8-9s warm;
+// 12s keeps headroom without leaving a hung request open for a long time.
 export const STYLIST_TIMEOUT_MS = 12_000
+// Photo budget: the `analyze` call specifically when a photo is attached.
+// Real-key measurement (Task 18 follow-up, 4 runs, 60s cap to observe the
+// true latency instead of guessing): TTFB to the `analysis` NDJSON line —
+// which is emitted the instant `analyze` returns — was 9.97s, 12.22s,
+// 12.47s, 14.80s (max 14.8s). The old single 12s budget was therefore
+// failing the photo path on most real attempts (3/4 observed times were
+// at or above it) even though the key/model/network were never the
+// bottleneck in isolation. 30s is roughly 2x the observed max, chosen to
+// absorb network jitter and real user photos (up to `MAX_PHOTO_BYTES`,
+// far larger than the tiny test image used to measure) without leaving
+// the request open indefinitely.
+export const STYLIST_PHOTO_TIMEOUT_MS = 30_000
 
 const catalog: StylistCatalog = {
   items: allItems,
@@ -224,6 +241,7 @@ export async function POST(request: Request): Promise<Response> {
     fallback: createDeterministicProvider(),
     catalog,
     timeoutMs: STYLIST_TIMEOUT_MS,
+    photoTimeoutMs: STYLIST_PHOTO_TIMEOUT_MS,
   }
 
   // `runStylist` always reports `degradedReason: 'no-key'` whenever

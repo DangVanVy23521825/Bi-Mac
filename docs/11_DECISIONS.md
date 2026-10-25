@@ -190,6 +190,16 @@ Record durable decisions here. Keep entries concise.
 
 ---
 
+## ADR-019 — Separate timeout budget for the photo-attached analyze call
+
+**Status:** Accepted
+
+**Decision:** The AI Stylist pipeline (`src/features/stylist/pipeline.ts`) now takes two timeout budgets instead of one: `timeoutMs` (text-only `analyze`, and always for `explain`, which never carries a photo) and `photoTimeoutMs` (the `analyze` call specifically when `input.photo` is present). The route (`src/app/api/stylist/route.ts`) sets `STYLIST_TIMEOUT_MS = 12_000` and `STYLIST_PHOTO_TIMEOUT_MS = 30_000`.
+
+**Reason:** Task 18's real-key verification measured the real Gemini provider directly instead of guessing: with a 60s cap in place to observe true latency, four photo-attached requests reached the `analysis` stage at 9.97s, 12.22s, 12.47s, and 14.80s — three of four at or above the original single 12s budget — while a text-only request on the same server reached it in 8.26s. The single shared timeout had been sized for the lighter text-only workload (full catalog vocabulary + system prompt + schema-constrained output) and was cutting off the heavier photo workload (the same plus the image part) by default, silently handing every photo submission to the deterministic fallback even on a working key/model/network path. Giving the photo case its own, larger budget (roughly 2x the observed max, to absorb jitter and real user photos larger than the tiny test image used to measure) fixes the actual mismatch — a workload-sizing problem, not a configuration mistake — without touching the text-only budget, which was already adequate.
+
+---
+
 ## Template for new decisions
 
 ```text

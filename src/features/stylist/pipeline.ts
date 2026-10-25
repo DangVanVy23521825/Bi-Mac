@@ -74,6 +74,18 @@ export type StylistDeps = {
   fallback: StylistProvider
   catalog: StylistCatalog
   timeoutMs?: number
+  // Budget for the *analyze* call specifically when `input.photo` is
+  // present. Measured against the real Gemini provider (Task 18 real-key
+  // verification), a multimodal analyze call — full catalog vocabulary +
+  // system prompt + schema-constrained output + the image part — routinely
+  // takes ~10-15s, while the text-only analyze call finishes in well under
+  // that. A single shared timeout sized for the lighter workload made the
+  // heavier one fail by default; this lets the route hand down a larger
+  // budget for the photo case without touching the no-photo path. Falls
+  // back to `timeoutMs` when unset, so existing callers/tests that only set
+  // `timeoutMs` are unaffected. `explain` never carries a photo (see
+  // `buildExplainContent`), so it always uses `timeoutMs`, never this.
+  photoTimeoutMs?: number
   // Optional hook fired synchronously, exactly once, right after resolve +
   // rank and before explain is called — this is what lets a caller (the
   // route handler) flush a real first NDJSON line instead of buffering
@@ -239,9 +251,13 @@ async function getExplanations(
 
 export async function runStylist(input: StylistInput, deps: StylistDeps): Promise<StylistOutcome> {
   const timeoutMs = deps.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  // The photo workload is measurably heavier (see `photoTimeoutMs` doc
+  // comment on `StylistDeps`) — only the analyze call gets the larger
+  // budget, and only when this request actually carries a photo.
+  const analyzeTimeoutMs = input.photo ? deps.photoTimeoutMs ?? timeoutMs : timeoutMs
   const vocabulary = buildVocabulary(deps.catalog)
 
-  const analyzeOutcome = await getAnalysis(input, deps, vocabulary, timeoutMs)
+  const analyzeOutcome = await getAnalysis(input, deps, vocabulary, analyzeTimeoutMs)
   const resolved = resolveAnalysis(analyzeOutcome.analysis, deps.catalog)
 
   const rankedOutfits = rankOutfits(resolved, input.answers, deps.catalog)

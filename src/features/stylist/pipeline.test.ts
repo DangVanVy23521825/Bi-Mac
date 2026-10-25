@@ -22,6 +22,15 @@ const input: StylistInput = {
   },
 }
 
+// Same answers, with a photo attached — used to prove `photoTimeoutMs`
+// (not `timeoutMs`) governs the analyze call whenever a photo is present.
+// The bytes are arbitrary; `runStylist` never inspects photo content, only
+// whether `input.photo` is present.
+const inputWithPhoto: StylistInput = {
+  ...input,
+  photo: { mediaType: 'image/jpeg', data: new Uint8Array([1, 2, 3]) },
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     const timer = setTimeout(resolve, ms)
@@ -184,6 +193,42 @@ describe('runStylist', () => {
 
   it('chuyển sang fallback khi provider chính quá hạn', async () => {
     const outcome = await runStylist(input, { ...deps, primary: slowProvider, timeoutMs: 20 })
+    expect(outcome.degradedReason).toBe('timeout')
+  })
+
+  // Task 18 follow-up: the photo path's analyze call is measurably heavier
+  // against the real provider (~10-15s vs ~8s text-only) and needs its own
+  // budget — `photoTimeoutMs` — distinct from `timeoutMs`. These two tests
+  // only pass if `runStylist` actually reads `input.photo` to pick which
+  // budget governs the analyze call; collapsing the two constants back
+  // into one would turn the first test red (it would time out at 20ms
+  // instead of succeeding at the 1000ms budget).
+  it('khi có ảnh, lượt analyze dùng photoTimeoutMs chứ không phải timeoutMs', async () => {
+    // slowProvider takes 60ms. timeoutMs (20ms) is deliberately too short;
+    // photoTimeoutMs (1000ms) is long enough. If `input.photo` were
+    // ignored and the analyze call used `timeoutMs` anyway, this would
+    // degrade to 'timeout' instead of succeeding via the primary provider.
+    const outcome = await runStylist(inputWithPhoto, {
+      ...deps,
+      primary: slowProvider,
+      timeoutMs: 20,
+      photoTimeoutMs: 1000,
+    })
+    expect(outcome.providerId).toBe('gemini')
+    expect(outcome.degraded).toBe(false)
+    expect(outcome.degradedReason).toBe(null)
+  })
+
+  it('khi không có ảnh, timeoutMs vẫn áp dụng cho lượt analyze dù photoTimeoutMs dài hơn', async () => {
+    // Same slowProvider/budgets as above, minus the photo. `photoTimeoutMs`
+    // must not leak into the no-photo path — this has to still time out
+    // at the short `timeoutMs`.
+    const outcome = await runStylist(input, {
+      ...deps,
+      primary: slowProvider,
+      timeoutMs: 20,
+      photoTimeoutMs: 1000,
+    })
     expect(outcome.degradedReason).toBe('timeout')
   })
 
