@@ -197,6 +197,34 @@ describe('runStylist', () => {
     expect(outcome.degradedReason).toBe('timeout')
   })
 
+  // Fix wave review item 7: trước đây timeoutMs chỉ khiến pipeline NGỪNG
+  // CHỜ provider chính, không khiến lượt gọi thật sự dừng lại — nếu đó là
+  // generateText tới Gemini, request vẫn chạy tới cùng và vẫn bị tính
+  // tiền sau khi pipeline đã chuyển sang fallback. Test này bắt đúng
+  // thuộc tính "dừng lại", không chỉ "ngừng chờ": capture signal được
+  // truyền vào analyze/explain và assert nó thực sự bị abort sau khi hết
+  // hạn, không chỉ là request đã bị bỏ qua.
+  it('khi hết hạn, signal truyền vào provider chính thực sự bị abort', async () => {
+    let capturedSignal: AbortSignal | undefined
+    const abortCapturingProvider: StylistProvider = {
+      id: 'gemini',
+      async analyze(req: AnalyzeRequest, opts) {
+        capturedSignal = opts?.signal
+        await delay(60)
+        return okProvider.analyze(req)
+      },
+      async explain(req: ExplainRequest) {
+        return okProvider.explain(req)
+      },
+    }
+
+    const outcome = await runStylist(input, { ...deps, primary: abortCapturingProvider, timeoutMs: 20 })
+
+    expect(outcome.degradedReason).toBe('timeout')
+    expect(capturedSignal).toBeDefined()
+    expect(capturedSignal?.aborted).toBe(true)
+  })
+
   // Task 18 follow-up: the photo path's analyze call is measurably heavier
   // against the real provider (~10-15s vs ~8s text-only) and needs its own
   // budget — `photoTimeoutMs` — distinct from `timeoutMs`. These two tests

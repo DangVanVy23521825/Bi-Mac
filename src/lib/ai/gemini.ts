@@ -16,7 +16,7 @@ import { google } from '@ai-sdk/google'
 import { generateText, Output } from 'ai'
 import { resolveModelId } from './model'
 import { ANALYSIS_SYSTEM_PROMPT, EXPLAIN_SYSTEM_PROMPT } from './prompts'
-import type { AnalyzeRequest, ExplainRequest, StylistProvider } from './provider'
+import type { AnalyzeRequest, ExplainRequest, StylistCallOptions, StylistProvider } from './provider'
 import { stylistAnalysisSchema, stylistExplanationSchema } from './schema'
 import type { StylistAnalysis, StylistExplanation } from './schema'
 
@@ -65,7 +65,11 @@ function buildExplainContent(req: ExplainRequest): UserContentPart[] {
   ]
 }
 
-async function analyze(req: AnalyzeRequest, generate: GenerateFn): Promise<StylistAnalysis> {
+async function analyze(
+  req: AnalyzeRequest,
+  generate: GenerateFn,
+  signal: AbortSignal | undefined,
+): Promise<StylistAnalysis> {
   const result = await generate({
     model: google(resolveModelId()),
     system: ANALYSIS_SYSTEM_PROMPT,
@@ -76,6 +80,12 @@ async function analyze(req: AnalyzeRequest, generate: GenerateFn): Promise<Styli
         content: buildAnalyzeContent(req),
       },
     ],
+    // Forwarded from the pipeline's timeout race (see `withTimeout` in
+    // `src/features/stylist/pipeline.ts`) so a request that has already
+    // been given up on actually stops — otherwise the call to Gemini
+    // keeps running, and being billed for, after the caller moved on to
+    // the deterministic fallback.
+    abortSignal: signal,
   })
 
   // `Output.object` already enforces the schema at the API layer, but we
@@ -87,7 +97,11 @@ async function analyze(req: AnalyzeRequest, generate: GenerateFn): Promise<Styli
   return stylistAnalysisSchema.parse(result.output)
 }
 
-async function explain(req: ExplainRequest, generate: GenerateFn): Promise<StylistExplanation> {
+async function explain(
+  req: ExplainRequest,
+  generate: GenerateFn,
+  signal: AbortSignal | undefined,
+): Promise<StylistExplanation> {
   const result = await generate({
     model: google(resolveModelId()),
     system: EXPLAIN_SYSTEM_PROMPT,
@@ -98,6 +112,8 @@ async function explain(req: ExplainRequest, generate: GenerateFn): Promise<Styli
         content: buildExplainContent(req),
       },
     ],
+    // Same reasoning as `analyze` above.
+    abortSignal: signal,
   })
 
   return stylistExplanationSchema.parse(result.output)
@@ -108,7 +124,7 @@ export function createGeminiProvider(deps: GeminiProviderDeps = {}): StylistProv
 
   return {
     id: 'gemini',
-    analyze: (req) => analyze(req, generate),
-    explain: (req) => explain(req, generate),
+    analyze: (req, opts?: StylistCallOptions) => analyze(req, generate, opts?.signal),
+    explain: (req, opts?: StylistCallOptions) => explain(req, generate, opts?.signal),
   }
 }

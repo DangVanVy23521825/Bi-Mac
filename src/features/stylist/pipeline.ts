@@ -104,19 +104,32 @@ class StylistTimeoutError extends Error {
   }
 }
 
-// Races `promise` against a timer. Whichever settles first wins; the timer
-// is cleared in both the resolve and reject branches of `promise.then` so
-// a promise that eventually settles after timing out never leaves a
-// dangling handle — and a promise that settles before the timer fires
-// clears the timer immediately, so there is nothing left pending either
-// way.
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+// Races `run(signal)` against a timer, and — this is the part a bare
+// `Promise.race` would not give you — actually tells the call to stop when
+// the timer wins. `run` receives an `AbortSignal` tied to an internal
+// `AbortController`; the timer aborts it before rejecting. Without this, a
+// timed-out call only stops being *awaited* here — `GeminiStylistProvider`
+// forwards the signal into `generateText`'s own `abortSignal` option, so
+// the underlying request to Gemini is actually cancelled instead of
+// running (and being billed for) to completion after the pipeline has
+// already moved on to the deterministic fallback. The deterministic
+// provider ignores the signal — it has nothing async worth cancelling.
+//
+// Whichever settles first still wins the race itself: the timer is
+// cleared in both the resolve and reject branches of `run(...).then` so a
+// call that eventually settles after timing out never leaves a dangling
+// handle, and a call that settles before the timer fires clears the timer
+// immediately, so there is nothing left pending either way.
+function withTimeout<T>(run: (signal: AbortSignal) => Promise<T>, timeoutMs: number): Promise<T> {
+  const controller = new AbortController()
+
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
+      controller.abort()
       reject(new StylistTimeoutError())
     }, timeoutMs)
 
-    promise.then(
+    run(controller.signal).then(
       (value) => {
         clearTimeout(timer)
         resolve(value)
@@ -194,7 +207,8 @@ async function getAnalysis(
   }
 
   try {
-    const analysis = await withTimeout(deps.primary.analyze(req), timeoutMs)
+    const primary = deps.primary
+    const analysis = await withTimeout((signal) => primary.analyze(req, { signal }), timeoutMs)
     return { analysis, providerUsed: deps.primary, degraded: false, degradedReason: null }
   } catch (error) {
     const degradedReason = reasonFor(error)
@@ -232,7 +246,10 @@ async function getExplanations(
   const rankedSlugs = new Set(rankedOutfits.map((ranked) => ranked.outfit.slug))
 
   try {
-    const explanation: StylistExplanation = await withTimeout(providerUsed.explain(req), timeoutMs)
+    const explanation: StylistExplanation = await withTimeout(
+      (signal) => providerUsed.explain(req, { signal }),
+      timeoutMs,
+    )
     const whyBySlug = new Map<string, string>()
     for (const entry of explanation.outfits) {
       // Rule 1: drop any entry about an outfit that wasn't actually ranked.

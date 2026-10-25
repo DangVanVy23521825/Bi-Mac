@@ -30,8 +30,23 @@ export type ExplainRequest = {
   outfits: OutfitDescriptor[]
 }
 
+// Runtime call control, deliberately kept separate from `AnalyzeRequest`/
+// `ExplainRequest`: those two are flat data that crosses the `src/lib/ai/`
+// boundary and gets logged/compared/serialized in tests; an `AbortSignal`
+// is neither data nor something that boundary cares about, so it travels
+// as a second, optional argument instead of a request field.
+export type StylistCallOptions = {
+  // When the caller (the pipeline's timeout race) gives up on a call, it
+  // aborts this signal too — without it, `withTimeout` in pipeline.ts only
+  // stops *waiting* on the promise; the underlying `generateText` request
+  // to Gemini keeps running (and being billed for) to completion. Only
+  // `GeminiStylistProvider` forwards this to the SDK; the deterministic
+  // provider has nothing async worth cancelling.
+  signal?: AbortSignal
+}
+
 export type StylistProvider = {
   readonly id: 'gemini' | 'deterministic'
-  analyze(req: AnalyzeRequest): Promise<StylistAnalysis>
-  explain(req: ExplainRequest): Promise<StylistExplanation>
+  analyze(req: AnalyzeRequest, opts?: StylistCallOptions): Promise<StylistAnalysis>
+  explain(req: ExplainRequest, opts?: StylistCallOptions): Promise<StylistExplanation>
 }
