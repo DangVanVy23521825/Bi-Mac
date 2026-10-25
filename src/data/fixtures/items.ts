@@ -19,7 +19,7 @@ export const items: FashionItem[] = [
       'Dệt kim len, co giãn nhẹ, không giữ nếp gấp như vải dệt thoi.',
       'Không có đường vai cấu trúc, rủ theo vai một cách tự nhiên.',
       'Độ dài thường qua hông, hợp để mặc hở hoặc cài vài cúc giữa.',
-      'Màu burgundy trong catalog ấm, dễ làm điểm nhấn cho nền trung tính.',
+      'Màu burgundy của cardigan ấm, dễ làm điểm nhấn cho nền trung tính.',
     ],
     howToStyle:
       'Mặc hở cardigan ngoài sơ mi trắng hoặc áo lụa để thêm lớp mà không thêm cấu trúc — hợp cho ngày làm việc không cần quá nghiêm túc. Cuối tuần, phối với quần wide-leg chocolate, để cardigan buông tự nhiên, không cài cúc. Đi học, thêm loafer để cả bộ gọn mà vẫn dễ di chuyển. Với chân váy midi, cardigan thay được vai trò của blazer khi muốn outfit mềm hơn mà vẫn đủ lớp để không đơn điệu.',
@@ -115,7 +115,7 @@ export const items: FashionItem[] = [
       'Dài qua bắp chân, thường xòe nhẹ hoặc suông thẳng tùy vải.',
       'Cạp cao hoặc cạp vừa, ít khi có pleat sâu như quần âu.',
       'Vải đủ đứng để không bết vào chân khi đi bộ nhiều.',
-      'Màu trong catalog gồm be-xám và đen, dễ làm nền cho áo nhiều màu.',
+      'Hai màu be-xám và đen đều trung tính, dễ làm nền cho áo nhiều màu.',
     ],
     howToStyle:
       'Áo lụa bỏ vào trong chân váy midi tạo một đường dọc liền mạch, hợp cho hẹn hò hoặc sự kiện buổi tối. Đi làm, đổi áo lụa thành sơ mi trắng và thêm blazer để cả bộ nghiêm túc hơn. Cuối tuần, phối với cardigan len và loafer, bỏ hết lớp khoác cứng. Vì chân váy đã có độ trang trọng riêng, không cần thêm túi có kết cấu để outfit vẫn đủ hoàn chỉnh.',
@@ -163,10 +163,10 @@ export const items: FashionItem[] = [
       'Kín mũi, không dây, đế thấp nhưng có độ dày hơn ballet flat.',
       'Mũi vuông hoặc gần vuông, khác dáng mũi nhọn của giày tây cổ điển.',
       'Thường có chi tiết khóa hoặc đường may ở mu bàn chân.',
-      'Màu chocolate và đen trong catalog đều trung tính, hợp nhiều outfit.',
+      'Hai màu chocolate và đen đều trung tính, hợp nhiều outfit.',
     ],
     howToStyle:
-      'Loafer hợp với hầu hết outfit đi làm trong catalog — sơ mi trắng và quần wide-leg chocolate, hoặc sơ mi với chân váy midi và blazer. Vì đế thấp và đứng dáng, loafer cũng hợp đi học hoặc cuối tuần khi cần đi lại nhiều mà vẫn muốn gọn hơn giày thể thao. Với shirt dress, loafer giữ outfit nghiêng về hướng gọn gàng hơn là mềm mại.',
+      'Loafer hợp với hầu hết outfit đi làm — sơ mi trắng và quần wide-leg chocolate, hoặc sơ mi với chân váy midi và blazer. Vì đế thấp và đứng dáng, loafer cũng hợp đi học hoặc cuối tuần khi cần đi lại nhiều mà vẫn muốn gọn hơn giày thể thao. Với shirt dress, loafer giữ outfit nghiêng về hướng gọn gàng hơn là mềm mại.',
     whatToAvoid:
       'Tránh phối loafer với outfit đã mềm mại như áo lụa và chân váy midi xòe rộng cho buổi hẹn hò — loafer kín mũi kéo tổng thể về hướng nghiêm túc hơn ý định ban đầu; ballet flat hợp hơn lúc đó. Tránh đi loafer không tất lâu giờ. Tránh chọn loafer quá rộng — giày lỏng ở gót làm mất sự đứng đắn vốn có của kiểu giày này.',
   },
@@ -188,7 +188,7 @@ export const items: FashionItem[] = [
       'Sợi dệt kim mảnh, co giãn tự nhiên, ôm nhẹ theo thân mà không cần chiết eo.',
       'Mỏng hơn cardigan len, đủ nhẹ để làm lớp trong dưới blazer hoặc trench coat.',
       'Không có đường nẹp cúc hay cổ đứng, chỉ cổ tròn hoặc cổ tim đơn giản.',
-      'Màu kem và be-xám trong catalog đều trung tính, dễ làm nền cho lớp ngoài đậm màu.',
+      'Màu kem và be-xám đều trung tính, dễ làm nền cho lớp ngoài đậm màu.',
     ],
     howToStyle:
       'Vì áo đã ôm nhẹ và trung tính, bỏ vào quần âu và khoác blazer là công thức đi làm gọn nhất — hai món đều có cấu trúc nên bù lại độ mềm của áo dệt kim. Đi học hoặc cuối tuần, mặc cùng quần wide-leg chocolate, không cần lớp khoác, thêm túi có kết cấu để outfit không quá đơn giản. Khi trời lạnh, trench coat khoác ngoài giữ được dáng ôm của áo mà không thêm khối ở vai như blazer.',
@@ -200,7 +200,7 @@ export const items: FashionItem[] = [
     name: 'Quần âu',
     category: 'bottoms',
     excerpt:
-      'Ống côn nhẹ, cạp vừa, đường ly giữa thẳng tắp — món quần nghiêm túc nhất trong catalog.',
+      'Ống côn nhẹ, cạp vừa, đường ly giữa thẳng tắp — nghiêm túc hơn cả quần wide-leg chocolate.',
     image: null,
     colorSlugs: ['den', 'chocolate'],
     styleSlugs: ['modern-classic', 'minimalist'],
@@ -208,7 +208,7 @@ export const items: FashionItem[] = [
     fit: 'fitted',
     attributes: [],
     whatItIs:
-      'Quần âu là quần tây có đường ly giữa thẳng từ gối xuống gấu, ống côn nhẹ hơn quần wide-leg chocolate. Cạp vừa, vải có độ đứng đủ giữ đường ly suốt ngày. Đây là món quần có cấu trúc rõ nhất trong catalog, khác hẳn độ buông của chân váy midi.',
+      'Quần âu là quần tây có đường ly giữa thẳng từ gối xuống gấu, ống côn nhẹ hơn quần wide-leg chocolate. Cạp vừa, vải có độ đứng đủ giữ đường ly suốt ngày. Đây là món quần có cấu trúc rõ nhất, khác hẳn độ buông của chân váy midi.',
     characteristics: [
       'Đường ly giữa thẳng từ gối xuống gấu, giữ dáng suốt ngày không cần ủi lại.',
       'Ống côn nhẹ, hẹp hơn quần wide-leg chocolate, lộ rõ hình dáng chân hơn.',
@@ -216,7 +216,7 @@ export const items: FashionItem[] = [
       'Vải có độ đứng cao, ít nhăn khi ngồi lâu trong môi trường công sở.',
     ],
     howToStyle:
-      'Bỏ áo dệt kim mỏng hoặc sơ mi trắng vào trong quần âu rồi khoác blazer là công thức đi làm gọn và nghiêm túc nhất trong catalog — ba món đều có cấu trúc nên không cần thêm chi tiết khác. Sự kiện buổi tối, đổi blazer thành áo lụa buông ngoài quần, thêm túi có kết cấu để outfit mềm hơn mà quần vẫn giữ đường nghiêm túc. Trời lạnh, trench coat khoác ngoài không phá dáng ống côn của quần.',
+      'Bỏ áo dệt kim mỏng hoặc sơ mi trắng vào trong quần âu rồi khoác blazer là công thức đi làm gọn và nghiêm túc nhất — ba món đều có cấu trúc rõ nên không cần thêm chi tiết khác. Sự kiện buổi tối, đổi blazer thành áo lụa buông ngoài quần, thêm túi có kết cấu để outfit mềm hơn mà quần vẫn giữ đường nghiêm túc. Trời lạnh, trench coat khoác ngoài không phá dáng ống côn của quần.',
     whatToAvoid:
       'Tránh chọn quần âu rộng hơn một cỡ — đường ly sẽ mất tác dụng và ống trông xệ chứ không côn. Tránh phối với áo cũng nhiều cấu trúc như blazer dày mà không chừa món mềm nào, outfit sẽ cứng toàn bộ. Tránh đi giày đế quá dày, phá mất đường thẳng gọn mà ống côn tạo ra.',
   },
@@ -258,12 +258,12 @@ export const items: FashionItem[] = [
     fit: 'relaxed',
     attributes: ['sleeveless', 'clingy'],
     whatItIs:
-      'Slip dress là váy liền không tay, cắt chéo theo đường vải nên bám nhẹ theo thân, khác độ đứng khối của shirt dress. Dây áo mỏng, không có cấu trúc vai hay nẹp cúc, dáng váy phụ thuộc vào cách vải rơi. Đây là món ít cấu trúc nhất trong catalog, đối lập với blazer.',
+      'Slip dress là váy liền không tay, cắt chéo theo đường vải nên bám nhẹ theo thân, khác độ đứng khối của shirt dress. Dây áo mỏng, không có cấu trúc vai hay nẹp cúc, dáng váy phụ thuộc hoàn toàn vào cách vải rơi. Đây là món ít cấu trúc nhất, đối lập với blazer.',
     characteristics: [
       'Cắt chéo theo đường vải, bám nhẹ theo thân (clingy), không giữ khối như vải dệt thẳng.',
       'Không tay, dây áo mỏng, không có đường may định hình ở vai hay eo.',
       'Không hợp lớp trong dày vì vải mỏng dễ lộ đường viền bên dưới.',
-      'Màu burgundy và đen trong catalog đều đậm, giữ được độ sang khi vải bám sát.',
+      'Màu burgundy và đen của váy đều đậm, giữ được độ sang khi vải bám sát.',
     ],
     howToStyle:
       'Vì slip dress không tay và bám sát, luôn cần một lớp ngoài để cân lại — trench coat khoác buông, không cài cúc, là lựa chọn hợp nhất cho sự kiện buổi tối. Cardigan len cũng được nhưng sẽ kéo outfit về hướng thường ngày hơn là sang trọng. Đi ballet flat nếu cần di chuyển nhiều, hoặc giữ nguyên để không kéo thêm một lớp nổi bật vào outfit đã đủ bám sát. Túi có kết cấu giúp outfit có một điểm cứng để không mềm toàn bộ.',
@@ -288,7 +288,7 @@ export const items: FashionItem[] = [
       'Xòe nhẹ từ eo xuống gấu theo hình chữ A, không bám sát như slip dress.',
       'Không tay nhưng vải đứng hơn lụa, không cần tính lớp lót phía trong.',
       'Đường eo chiết nhẹ hoặc cắt ngang, định hình dáng mà không cần thắt lưng rời.',
-      'Màu kem và burgundy trong catalog hợp cả dịp thường ngày và hẹn hò nhẹ.',
+      'Kem và burgundy là hai màu hợp cả dịp thường ngày và hẹn hò nhẹ.',
     ],
     howToStyle:
       'Vì không tay và xòe nhẹ, a-line dress cần một lớp ngoài khi trời lạnh hoặc muốn thêm cấu trúc — cardigan len khoác hở là lựa chọn hợp nhất, giữ được độ mềm chung của outfit. Đi học hoặc cuối tuần, đi ballet flat để cả bộ nhẹ và dễ di chuyển. Hẹn hò, thêm túi có kết cấu để outfit không chỉ dựa vào độ xòe của váy mà có thêm một điểm cứng cân lại.',
@@ -308,12 +308,12 @@ export const items: FashionItem[] = [
     fit: 'relaxed',
     attributes: [],
     whatItIs:
-      'Trench coat là áo khoác dáng dài qua hông hoặc gối, có đai lưng rời và cổ bẻ rộng, khác hẳn độ fitted và vai dựng của blazer. Thân relaxed, không chiết eo trừ khi thắt đai, độ vừa vặn phụ thuộc vào cách buộc đai. Nó là lớp ngoài cùng, mặc ngoài mọi món khác trong catalog, không đứng chung lớp với cardigan hay blazer.',
+      'Trench coat là áo khoác dáng dài qua hông hoặc gối, có đai lưng rời và cổ bẻ rộng, khác hẳn độ fitted và vai dựng của blazer. Thân relaxed, không chiết eo trừ khi thắt đai, độ vừa vặn phụ thuộc vào cách buộc đai. Nó luôn là lớp ngoài cùng, mặc ngoài mọi món khác, không đứng chung lớp với cardigan hay blazer.',
     characteristics: [
       'Dáng dài qua hông hoặc gối, có đai lưng rời để tự chiết eo khi cần.',
       'Cổ bẻ rộng, thường có cầu vai và túi hộp, chi tiết đặc trưng của áo mưa cổ điển.',
       'Thân relaxed, không chiết sẵn, độ vừa vặn phụ thuộc vào cách buộc đai.',
-      'Màu be-xám và kem trong catalog trung tính, hợp làm lớp ngoài cho hầu hết outfit.',
+      'Màu be-xám và kem đều trung tính, hợp làm lớp ngoài cho hầu hết outfit.',
     ],
     howToStyle:
       'Buộc đai ở eo khi mặc ngoài shirt dress hoặc áo dệt kim mỏng và quần âu để trench coat thêm cấu trúc thay vì chỉ thêm lớp ấm. Đi làm, giữ đai buộc gọn và đi loafer để cả bộ nghiêm túc. Cuối tuần, để trench coat buông không buộc đai, mặc ngoài áo dệt kim mỏng và quần wide-leg chocolate, đi ballet flat cho thoải mái hơn.',
@@ -338,10 +338,10 @@ export const items: FashionItem[] = [
       'Đế bệt mỏng, mũi tròn, không có phần đế dày như loafer.',
       'Thân giày mềm, uốn theo chân khi đi, không giữ dáng cứng.',
       'Thường không quai hoặc quai mỏng, không có khóa hay chi tiết kim loại.',
-      'Màu đen và kem trong catalog đều trung tính, dễ phối với mọi tông màu khác.',
+      'Màu đen và kem của ballet flat đều trung tính, dễ phối với mọi tông màu khác.',
     ],
     howToStyle:
-      'Ballet flat hợp nhất với những outfit đã mềm sẵn trong catalog — áo lụa và chân váy midi, hoặc a-line dress và cardigan len. Vì đế mỏng và không giữ dáng cứng, nó giữ outfit nghiêng hẳn về phía thoải mái, khác với loafer vốn kéo outfit về hướng nghiêm túc hơn. Đi học hoặc hẹn hò ban ngày, ballet flat là lựa chọn nhẹ nhất trong catalog để đi lại cả ngày mà không cần đổi giày.',
+      'Ballet flat hợp nhất với những outfit đã mềm sẵn — áo lụa và chân váy midi, hoặc a-line dress và cardigan len. Vì đế mỏng và không giữ dáng cứng, nó giữ outfit nghiêng hẳn về phía thoải mái, khác với loafer vốn kéo outfit về hướng nghiêm túc hơn. Đi học hoặc hẹn hò ban ngày, ballet flat là lựa chọn nhẹ hơn loafer để đi lại cả ngày mà không cần đổi giày.',
     whatToAvoid:
       'Tránh đi ballet flat với outfit đã nhiều lớp cứng như blazer và quần âu cho dịp cần nghiêm túc — đế quá mềm sẽ kéo tổng thể lệch hướng; loafer hợp hơn lúc đó. Tránh đi bộ đường dài liên tục vì đế mỏng không có đệm như loafer. Tránh chọn cỡ rộng hơn chân, giày không quai dễ tuột gót khi đi nhanh.',
   },
@@ -363,7 +363,7 @@ export const items: FashionItem[] = [
       'Khung cứng hoặc đường may rõ, giữ hình dáng cố định dù đựng gì bên trong.',
       'Quai ngắn hoặc vừa, cầm tay hoặc đeo chéo gọn, không phải quai yếm to bản.',
       'Không xệ hay đổi hình như túi vải mềm, luôn giữ đường viền rõ nét.',
-      'Màu chocolate và đen trong catalog đều đậm, làm điểm neo thị giác rõ cho outfit nhạt.',
+      'Màu chocolate và đen của túi đều đậm, làm điểm neo thị giác rõ cho outfit nhạt.',
     ],
     howToStyle:
       'Dùng túi có kết cấu khi outfit còn lại đều mềm — áo lụa và quần âu, hoặc slip dress khoác trench coat — để có một điểm cứng cân lại toàn bộ. Vì vai blazer đã có cấu trúc riêng, chọn túi cầm tay nhỏ thay vì túi đeo chéo to khi phối cùng blazer, tránh chồng hai điểm cấu trúc lên nhau. Đi làm, túi này thay được vai trò điểm nhấn mà không cần thêm trang sức hay chi tiết khác.',

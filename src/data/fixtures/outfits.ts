@@ -85,7 +85,7 @@ export const outfits: Outfit[] = [
     slug: 'slip-dress-trench-buoi-toi',
     name: 'Slip dress trench buổi tối',
     whyItWorks:
-      'Slip dress là món ít cấu trúc nhất trong catalog, nên trench coat khoác buông không cài cúc là lớp ngoài cân lại vừa đủ, không cứng như blazer để không xung đột với đường cắt chéo của váy. Ballet flat giữ outfit nhẹ ở chân, và burgundy hoặc đen của slip dress đứng dưới be-xám hoặc kem của trench vẫn giữ được độ sang cho buổi tối.',
+      'Slip dress là món ít cấu trúc nhất trong outfit này, nên trench coat khoác buông không cài cúc là lớp ngoài cân lại vừa đủ, không cứng như blazer để không xung đột với đường cắt chéo của váy. Ballet flat giữ outfit nhẹ ở chân, và burgundy hoặc đen của slip dress đứng dưới be-xám hoặc kem của trench vẫn giữ được độ sang cho buổi tối.',
     image: null,
     itemSlugs: ['slip-dress', 'trench-coat', 'ballet-flat'],
     styleSlugs: ['quiet-luxury'],

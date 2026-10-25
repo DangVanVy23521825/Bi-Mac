@@ -34,7 +34,7 @@ const OCCASION_LABEL: Record<Occasion, string> = {
 }
 
 const FALLBACK_NOTE =
-  'Đây là gợi ý từ chế độ dự phòng của Bí Mặc (không qua mô hình AI) — kết quả được suy ra theo quy tắc cố định dựa trên dịp mặc bạn chọn, vẫn lấy từ đúng catalog hiện có.'
+  'Đây là gợi ý từ chế độ dự phòng của Bí Mặc (không qua mô hình AI) — kết quả được suy ra theo quy tắc cố định dựa trên dịp mặc bạn chọn, vẫn lấy từ đúng những món Bí Mặc đang có.'
 
 const DEFAULT_OCCASIONS: Occasion[] = ['casual']
 

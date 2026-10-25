@@ -37,8 +37,8 @@ function DegradedBanner({ degraded }: { degraded: boolean }) {
       role="status"
       className="border border-muted/40 bg-muted/35 px-4 py-3 font-body text-sm text-accent-soft"
     >
-      Đây là gợi ý từ chế độ dự phòng của Bí Mặc (không gọi được AI lúc này) — vẫn lấy từ catalog
-      thật, nhưng phần giải thích có thể đơn giản hơn bình thường.
+      Đây là gợi ý từ chế độ dự phòng của Bí Mặc (không gọi được AI lúc này) — vẫn lấy từ đúng
+      những món Bí Mặc đang có, nhưng phần giải thích có thể đơn giản hơn bình thường.
     </p>
   )
 }
