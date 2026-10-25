@@ -21,8 +21,9 @@ App Router scaffold, editorial Home, Wardrobe, Styles, AI Stylist, My Closet,
 Vitest coverage), Milestone 1 (the art-direction image batch — see
 `docs/13_ART_DIRECTION.md` and
 `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`), Milestone 2
-(the catalog expansion to 15 items / 5 styles / 10 outfits / 3 stories), and
-Milestone 3 (the full AI Stylist — questionnaire, Gemini provider with a
+(the catalog expansion to 15 items, 5 styles, and 10 outfits, with real
+ranking metadata — occasions/fit/attributes — and cross-linked detail pages),
+and Milestone 3 (the full AI Stylist — questionnaire, Gemini provider with a
 deterministic fallback, catalog grounding/ranking, NDJSON streaming, rate
 limiting) are all complete and deployed to production:
 
@@ -40,6 +41,14 @@ Playwright spec. See ADR-011, ADR-012, ADR-016, ADR-017, ADR-018 and
 and copy, but there is no save action and no persistence (no `localStorage`,
 no Supabase) anywhere in `src/`. That behaviour is scoped to a later
 milestone (M4) — do not assume it exists.
+
+Editorial Stories are also unfinished, the same way: `src/data/fixtures/stories.ts`
+has 3 fixture records, but each is title-only (`slug`/`title`/`excerpt`/`image` —
+no article body, no `paragraphs` field on `Story`), there is no `/stories` or
+`/stories/[slug]` route anywhere in `src/app/`, and `StoryCard` renders no
+`Link`, which is why this is not a dead-link bug. Full story content (~1,800
+words across 3 stories) and the `/stories/[slug]` route are explicitly out of
+scope for this work and land in M4 — do not assume either exists.
 
 Keep the command list below accurate as the toolchain lands.
 
