@@ -237,6 +237,33 @@ describe('runStylist', () => {
     expect(outcome.degradedReason).toBe('no-key')
   })
 
+  // Task 4 của fix wave review: `DeterministicStylistProvider` (trong
+  // `src/lib/ai/deterministic.ts`) phải giữ ranh giới §7 — không được
+  // import `@/data` — nên bảng `OCCASION_STYLE` của nó hardcode style slug
+  // bằng giá trị chuỗi, không tham chiếu qua type. Mọi test trong
+  // `deterministic.test.ts` tự dựng vocabulary bằng đúng những slug đó,
+  // nên không test nào phát hiện được nếu một slug trong bảng không còn
+  // khớp catalog thật — đổi tên một style slug thì fallback lặng lẽ trả
+  // `styleDirections: []` ở MỌI đường suy giảm (hết hạn mức, hết quota,
+  // mất key, lỗi provider), và cả suite vẫn xanh.
+  //
+  // `pipeline.test.ts` là chỗ hợp lệ duy nhất để bắt điều này: nó được
+  // phép import cả `@/data` (catalog thật) và `@/lib/ai` (fallback), còn
+  // `deterministic.test.ts` tự nó không được phép import `@/data`.
+  it('fallback tất định sinh styleDirections không rỗng với catalog thật (bắt lệch slug giữa OCCASION_STYLE và styles.ts)', async () => {
+    // Dùng riêng từng dịp mặc (không gộp 'work' + 'casual' như `input`
+    // dùng chung ở trên) — nếu gộp, một dịp vẫn còn slug đúng có thể che
+    // mất lệch slug ở dịp khác. Mỗi dịp phải tự đứng được.
+    for (const occasion of ['work', 'school', 'casual', 'date', 'event'] as const) {
+      const outcome = await runStylist(
+        { answers: { occasions: [occasion], fitPreference: 'unsure', avoids: [], goal: 'style' } },
+        { ...deps, primary: null },
+      )
+      expect(outcome.degradedReason, `dịp ${occasion}`).toBe('no-key')
+      expect(outcome.styleDirections.length, `dịp ${occasion}`).toBeGreaterThan(0)
+    }
+  })
+
   it('mọi href trong kết quả trỏ tới route thật', async () => {
     const outcome = await runStylist(input, deps)
     for (const d of outcome.styleDirections) expect(d.href).toMatch(/^\/styles\/[a-z-]+$/)
