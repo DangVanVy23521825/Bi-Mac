@@ -27,4 +27,12 @@ describe('trang chủ', () => {
     render(await Home())
     expect(screen.getByRole('link', { name: 'Thử AI phối đồ' })).toHaveAttribute('href', '/stylist')
   })
+
+  it('thẻ style ở homepage trỏ tới đúng style, không trỏ về index', async () => {
+    render(await Home())
+    expect(screen.getByRole('link', { name: /Quiet Luxury/ })).toHaveAttribute(
+      'href',
+      '/styles/quiet-luxury',
+    )
+  })
 })

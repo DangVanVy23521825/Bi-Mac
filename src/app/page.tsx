@@ -60,7 +60,7 @@ export default async function Home() {
         <SectionHeading eyebrow="Find your style" title="Hướng style nào giống bạn?" />
         <div className="grid gap-10 sm:grid-cols-5">
           {styles.map((style) => (
-            <Link key={style.slug} href="/styles" className="group block">
+            <Link key={style.slug} href={`/styles/${style.slug}`} className="group block">
               <EditorialImage src={style.image} alt={style.name} ratio="look" />
               <h3 className="mt-3 font-display text-lg group-hover:text-accent">{style.name}</h3>
             </Link>
