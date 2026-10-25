@@ -38,14 +38,36 @@ describe('createMemoryRateLimiter', () => {
     expect(results.filter((r) => r.allowed)).toHaveLength(5)
   })
 
-  it('không giữ key đã hết hạn', async () => {
+  // Trước đây test này chỉ xác nhận cửa sổ mở lại cho `ip-0` — điều một
+  // test khác ("cửa sổ trôi thì mở lại") đã kiểm rồi, và không nói gì về
+  // việc bộ nhớ có được dọn hay không. Giờ test thẳng vào thuộc tính dọn
+  // dẹp: dùng `size()` (introspection dành cho test, xem `memory.ts`) để
+  // xác nhận key đã hết hạn thực sự biến mất khỏi Map, không chỉ "còn
+  // dùng được lại" — một implementation giữ mọi key mãi mãi (bug cũ) vẫn
+  // qua được bài kiểm "mở lại cửa sổ" nhưng phải fail bài kiểm này.
+  it('dọn key đã hết hạn khỏi bộ nhớ, không giữ mãi để phình không giới hạn', async () => {
     let t = 0
     const limiter = createMemoryRateLimiter({ limit: 1, windowMs: 100, now: () => t })
-    for (let i = 0; i < 500; i += 1) {
-      await limiter.check(`ip-${i}`)
-      t += 1
+    const STALE_KEY_COUNT = 50
+
+    for (let i = 0; i < STALE_KEY_COUNT; i += 1) {
+      await limiter.check(`stale-${i}`)
     }
+    expect(limiter.size()).toBe(STALE_KEY_COUNT)
+
+    // Mọi key trên giờ đã hết hạn (windowMs=100, trôi xa hơn nhiều).
     t += 1000
-    expect((await limiter.check('ip-0')).allowed).toBe(true)
+
+    // Sweep bị giới hạn theo lượt (SWEEP_BATCH_SIZE trong memory.ts), nên
+    // cần vài lượt check bất kỳ — không nhất thiết đúng những key cũ — để
+    // quét hết toàn bộ 50 key. 10 lượt dư sức (10 × SWEEP_BATCH_SIZE=20
+    // bước quét, trong khi chỉ có 50 key cũ cần dọn).
+    for (let i = 0; i < 10; i += 1) {
+      await limiter.check(`flush-${i}`)
+    }
+
+    // Chỉ còn tối đa 10 key flush vừa thêm; toàn bộ 50 key cũ phải đã bị
+    // dọn, không phải "vẫn còn nhưng mở lại cửa sổ".
+    expect(limiter.size()).toBeLessThanOrEqual(10)
   })
 })
