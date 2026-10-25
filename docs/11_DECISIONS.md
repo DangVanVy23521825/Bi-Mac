@@ -156,6 +156,40 @@ Record durable decisions here. Keep entries concise.
 
 ---
 
+## ADR-016 — Ranking metadata and hard avoid-exclusion
+
+**Status:** Accepted
+
+**Decision:** `FashionItem` carries `occasions`, `fit`, and `attributes` fields. The questionnaire's avoid list is not a fixed hard-coded set of options — it is produced by `getAvoidOptions()`, which scans the catalog and returns only the `ItemAttribute` values that at least one real item actually has. At ranking time, any outfit (or item) that contains an attribute the user asked to avoid is dropped from the candidate list entirely, before scoring runs; it is never kept in the results at a lower rank.
+
+**Reason:** `/stylist`'s own copy tells the user their "những thứ bạn muốn tránh" will be respected. A ranking system that only demotes an avoided attribute still shows it to the user somewhere on the page — the user asked not to see sleeveless tops and then sees one two rows down. That is a broken promise, not a weaker one, so avoid has to be a filter the item can fail, not a score it can lose points on. Deriving the questionnaire's options from the catalog (rather than hard-coding the full vocabulary) keeps the same promise from the other direction: it stops the UI from ever offering a choice the current 15-item catalog has no way to honor.
+
+---
+
+## ADR-017 — The outfit floor is a display floor, not a direct floor
+
+**Status:** Accepted
+
+**Decision:** Amends the direction spec's constraint that "every item appears in ≥2 outfits." At 15 items and 10 outfits that constraint cannot be satisfied directly for every category at once: a dress fills a whole outfit by itself and excludes a separate top and bottom from that same outfit, so getting all 3 dresses to 2 direct appearances each needs 6 of the 10 outfits to be dress outfits. That leaves only 4 outfits to carry the 3 tops and 3 bottoms at 2 direct appearances each — 6 top-appearances and 6 bottom-appearances needed from 4 outfits that can supply at most one of each — so the arithmetic does not close. The replacement rule is: every item appears in **≥1** outfit directly, and `getRelatedOutfits()` guarantees **≥2** outfits are *displayed* on that item's page by topping up the direct matches with outfits that share one of the item's styles when fewer than 2 direct matches exist. The two kinds of match are labelled differently in the UI (`relation: 'contains-item' | 'same-style'`) so a visitor is never told an outfit contains an item that it does not.
+
+**Reason:** The actual product goal behind the "≥2" rule was never the number two — it was that an item's detail page is never left with an empty or single, thin-looking related-outfits section. Chasing the literal number on a fixed 15/10 catalog would mean either inflating outfits with items that don't belong in them, or quietly shrinking the catalog; topping up with same-style outfits (and being honest in the UI about which kind of match it is) keeps the actual goal intact without either compromise.
+
+---
+
+## ADR-018 — `Output.object` instead of `generateObject`; stage-level streaming; in-memory rate limiting
+
+**Status:** Accepted
+
+**Decision:**
+
+1. **Structured output.** `generateObject` does not exist in AI SDK 7 (`ai`). Structured output is produced with `generateText` combined with `Output.object({ schema })`, and the Gemini provider (`src/lib/ai/gemini.ts`) re-parses the result against the Zod schema itself even though `Output.object` already enforces it at the API layer — a provider-side change or a future SDK behavior change must not let anything unvalidated reach the pipeline.
+2. **Streaming granularity.** `/api/stylist` streams NDJSON in exactly two stages — an `analysis` line once resolve+rank finish, then a `result` line once `explain` settles — not per-token streaming.
+3. **Rate limiting.** `src/lib/rate-limit` is an in-memory sliding-window counter, applied per-IP and daily-global, checked only after the request has already passed structural validation. Upstash Redis (or an equivalent shared backend) is left as a documented seam behind the same `RateLimiter` interface, not implemented.
+
+**Reason:** (1) is a correction of a documentation assumption against the SDK actually installed, not a design choice — code has to follow the API that exists. (2) follows directly from the AI SDK's own documentation: partial output emitted mid-stream by `streamText` cannot be validated against a schema, so token-level streaming would hand the browser catalog slugs before anything confirms those slugs are real, breaking the one invariant this feature cannot compromise on (every link on the page points at something that exists). Two coarse, fully-validated stages is the streaming grain the schema constraint actually allows, and it still lets the UI show the style/palette direction before the slower outfit-explanation call finishes. (3) is a cost/complexity trade-off: a real shared limiter needs a network hop and an external dependency before the feature has any traffic to justify it, so the in-memory version ships now and the known gap — the effective limit multiplies by instance count on a multi-instance platform — is written down next to the code (`src/lib/rate-limit/index.ts`) instead of hidden.
+
+---
+
 ## Template for new decisions
 
 ```text

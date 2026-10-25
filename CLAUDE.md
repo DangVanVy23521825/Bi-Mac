@@ -18,21 +18,28 @@ seller, marketplace, or purchasing flows unless the product scope is explicitly 
 
 A Next.js application exists in the repository root. Milestone 0 (foundation —
 App Router scaffold, editorial Home, Wardrobe, Styles, AI Stylist, My Closet,
-Vitest coverage) and Milestone 1 (the art-direction image batch — see
+Vitest coverage), Milestone 1 (the art-direction image batch — see
 `docs/13_ART_DIRECTION.md` and
-`docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`) are both complete
-and deployed to production:
+`docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`), Milestone 2
+(the catalog expansion to 15 items / 5 styles / 10 outfits / 3 stories), and
+Milestone 3 (the full AI Stylist — questionnaire, Gemini provider with a
+deterministic fallback, catalog grounding/ranking, NDJSON streaming, rate
+limiting) are all complete and deployed to production:
 
 - Production: https://bi-mac.vercel.app
 - Vercel project: `hoatien/bi-mac`
 
-`/stylist` (AI Stylist) and `/closet` (My Closet) are **copy-only shells**: they
-render real layout and copy, but there is no questionnaire flow, no save action,
-and no persistence (no `localStorage`, no Supabase) anywhere in `src/`. That
-behaviour is scoped to a later milestone, not M0/M1 — do not assume it exists.
+`/stylist` (AI Stylist) is **no longer** a copy-only shell: the questionnaire,
+the photo-optional analyze/explain pipeline, and catalog-grounded results (with
+a deterministic fallback when no API key is configured or the model errors/
+times out) are all real and covered by tests, including an end-to-end
+Playwright spec. See ADR-011, ADR-012, ADR-016, ADR-017, ADR-018 and
+`docs/05_AI_STYLIST_SPEC.md`.
 
-The next milestone (M2) is the catalog expansion: 15 items, 5 styles, 10 outfits,
-and 3 stories, together with the photography those additional fixtures need.
+`/closet` (My Closet) is **still** a copy-only shell: it renders real layout
+and copy, but there is no save action and no persistence (no `localStorage`,
+no Supabase) anywhere in `src/`. That behaviour is scoped to a later
+milestone (M4) — do not assume it exists.
 
 Keep the command list below accurate as the toolchain lands.
 
@@ -48,9 +55,14 @@ pnpm test                                 # vitest run
 pnpm test:watch                           # vitest, watch mode
 pnpm vitest run src/data/index.test.ts    # single test file
 pnpm vitest run -t "trả về đúng item theo slug"  # single test by name
+pnpm test:e2e                             # Playwright, critical browser flows
 ```
 
 The app must boot and pass these without Supabase credentials or a paid AI key.
+`GOOGLE_GENERATIVE_AI_API_KEY` is optional: when it is absent (or the Gemini
+call errors/times out/is rate-limited), the AI Stylist runs entirely on its
+deterministic fallback provider and reports that in its response — see
+ADR-011 and ADR-018.
 
 ## Source of truth
 

@@ -2,6 +2,15 @@
 
 > **Superseded in part by** `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`
 > (ADR-011, ADR-012). Read the spec before following this document.
+>
+> **Superseded in part by ADR-016 and ADR-018.** The `generateObject` calls
+> implied here and in the direction spec above are outdated — that function
+> does not exist in the AI SDK version this project actually uses;
+> structured output is `generateText` + `Output.object({ schema })`. The
+> avoid-list is also a hard exclusion rather than a score penalty (ADR-016).
+> The real provider/streaming/rate-limit contract lives in
+> `src/lib/ai/provider.ts` (and its siblings in `src/lib/ai/`), not in this
+> document.
 
 ## Objective
 
