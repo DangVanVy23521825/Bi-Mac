@@ -108,10 +108,17 @@ describe('rankOutfits', () => {
     expect(minimalistFirst[0]!.outfit.slug).not.toBe(classicFirst[0]!.outfit.slug)
   })
 
-  it('fitPreference unsure không đổi thứ tự', () => {
-    expect(rankOutfits(analysisAll, answers({ fitPreference: 'unsure' }), catalog, 10)).toEqual(
-      rankOutfits(analysisAll, answers({ fitPreference: 'unsure' }), catalog, 10),
-    )
+  // Trước đây test này so `rankOutfits(X)` với `rankOutfits(X)` — cùng
+  // input, không có cách nào fail dù 'unsure' có khớp mọi item hay không.
+  // Thuộc tính thật cần giữ: 'unsure' không phải một `Fit` hợp lệ nên phải
+  // góp đúng 0 điểm fit, giống hệt một `Fit` không món nào trong catalog
+  // có (không item nào mang `fit: 'oversized'` — xem `src/data/fixtures
+  // /items.ts`). Nếu implementation coi 'unsure' là khớp mọi item (bug mà
+  // test này phải bắt được), điểm fit sẽ dương và kết quả hai bên lệch.
+  it("fitPreference 'unsure' góp đúng 0 điểm fit, giống một Fit catalog không có món nào", () => {
+    const unsure = rankOutfits(analysisAll, answers({ fitPreference: 'unsure' }), catalog, 10)
+    const noMatch = rankOutfits(analysisAll, answers({ fitPreference: 'oversized' }), catalog, 10)
+    expect(unsure).toEqual(noMatch)
   })
 
   it('điểm bằng nhau thì xếp theo slug', () => {
