@@ -1,6 +1,10 @@
+import { StylistFlow } from '@/components/stylist/StylistFlow'
 import { SectionHeading } from '@/components/ui/SectionHeading'
+import { getAvoidOptions } from '@/data'
 
-export default function StylistPage() {
+export default async function StylistPage() {
+  const avoidOptions = await getAvoidOptions()
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
       <SectionHeading eyebrow="AI phối đồ" title="Gợi ý phối đồ cho riêng bạn" />
@@ -12,6 +16,10 @@ export default function StylistPage() {
       <p className="mt-6 font-body text-sm text-accent-soft">
         Ảnh là tuỳ chọn. Nếu bạn gửi ảnh, nó chỉ dùng để phân tích trong lần đó và không được lưu lại.
       </p>
+
+      <div className="mt-16">
+        <StylistFlow avoidOptions={avoidOptions} />
+      </div>
     </div>
   )
 }
