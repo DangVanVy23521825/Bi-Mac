@@ -41,13 +41,19 @@
 import { allColors, allItems, allOutfits, allStyles } from '@/data'
 import { stylistInputSchema, type StylistInput } from '@/features/stylist/input'
 import { runStylist, type DegradedReason, type StylistDeps } from '@/features/stylist/pipeline'
+import { ALLOWED_PHOTO_TYPES, MAX_PHOTO_BYTES } from '@/features/stylist/photo-limits'
 import type { StylistCatalog } from '@/features/stylist/resolve'
 import { createDeterministicProvider } from '@/lib/ai/deterministic'
 import { createGeminiProvider } from '@/lib/ai/gemini'
 import { createMemoryRateLimiter } from '@/lib/rate-limit'
 
-export const MAX_PHOTO_BYTES = 4_000_000
-export const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
+// Re-exported so `route.test.ts` and anything else probing the HTTP
+// boundary can keep importing these from the route itself — the values
+// live in `src/features/stylist/photo-limits.ts` so the client-side
+// `Questionnaire` form can enforce the same limits without pulling this
+// route module (Gemini provider, rate limiter, full catalog) into the
+// browser bundle.
+export { ALLOWED_PHOTO_TYPES, MAX_PHOTO_BYTES }
 export const PER_IP_LIMIT = 5
 export const PER_IP_WINDOW_MS = 600_000
 export const DAILY_LIMIT = 200

@@ -13,8 +13,13 @@
 //   "typically several seconds" — rendering here instead of waiting for
 //   `result` is the entire reason the backend stages the response.
 // `done` → the `result` line arrived; the full outcome is ready.
-// `error` → the network call itself failed (not a degraded-but-successful
-//   pipeline run, which is still `done` with `outcome.degraded: true`).
+// `error` → the request did not produce a usable stream — a true network
+//   failure, a malformed response, or the route rejecting the request
+//   outright (400/413/415). `errorKind` distinguishes *why*, so the copy
+//   can say what actually happened instead of defaulting every failure to
+//   "the network is flaky" — a 413/415 is the user's photo being rejected,
+//   not a connection problem, and blaming the network there just invites
+//   an endless retry of a request that will fail the same way every time.
 //
 // ADR-012: `input.photo` (the `File` the user chose) is only ever placed
 // into a `FormData` and hand off to `fetch`. Never logged, never kept
@@ -27,12 +32,33 @@ import { Questionnaire, type QuestionnaireSubmission } from './Questionnaire'
 import { StylistResult } from './StylistResult'
 import type { ItemAttribute } from '@/types/stylist'
 
+type ErrorKind = 'photo-too-large' | 'photo-type-unsupported' | 'network'
+
 type State =
   | { status: 'idle' }
   | { status: 'pending' }
   | { status: 'partial'; analysis: AnalysisStage }
   | { status: 'done'; outcome: StylistOutcome }
-  | { status: 'error' }
+  | { status: 'error'; errorKind: ErrorKind }
+
+// Maps the route's own status codes (see the validation-order comment in
+// `src/app/api/stylist/route.ts`) to why the request failed. Everything
+// else — a dropped connection, a malformed stream, a 400/500 — is treated
+// as `'network'`, the one case where "try again" is actually good advice.
+function errorKindForStatus(status: number): ErrorKind {
+  if (status === 413) return 'photo-too-large'
+  if (status === 415) return 'photo-type-unsupported'
+  return 'network'
+}
+
+const ERROR_COPY: Record<ErrorKind, string> = {
+  'photo-too-large':
+    'Ảnh bạn gửi đang lớn hơn dung lượng Bí Mặc nhận được. Hãy chọn một ảnh nhỏ hơn, hoặc nén/chụp lại ở độ phân giải thấp hơn, rồi gửi lại câu hỏi.',
+  'photo-type-unsupported':
+    'Bí Mặc chưa đọc được định dạng ảnh bạn vừa chọn. Hãy đổi sang ảnh JPEG, PNG hoặc WebP rồi gửi lại.',
+  network:
+    'Không gửi được yêu cầu lúc này — có thể do mạng chập chờn. Bạn có thể thử lại.',
+}
 
 type AnalysisLine = { type: 'analysis' } & AnalysisStage
 type ResultLine = {
@@ -153,12 +179,12 @@ export function StylistFlow({ avoidOptions }: Props) {
     try {
       response = await fetch('/api/stylist', { method: 'POST', body: formData })
     } catch {
-      setState({ status: 'error' })
+      setState({ status: 'error', errorKind: 'network' })
       return
     }
 
     if (!response.ok || !response.body) {
-      setState({ status: 'error' })
+      setState({ status: 'error', errorKind: errorKindForStatus(response.status) })
       return
     }
 
@@ -194,7 +220,7 @@ export function StylistFlow({ avoidOptions }: Props) {
         }
       }
     } catch {
-      setState({ status: 'error' })
+      setState({ status: 'error', errorKind: 'network' })
     }
   }
 
@@ -204,7 +230,7 @@ export function StylistFlow({ avoidOptions }: Props) {
 
       {state.status === 'error' && (
         <p className="font-body text-sm text-accent-soft">
-          Không gửi được yêu cầu lúc này — có thể do mạng chập chờn. Bạn có thể thử lại, hoặc{' '}
+          {ERROR_COPY[state.errorKind]} Bạn cũng có thể{' '}
           <Link href="/styles" className="underline-offset-4 hover:text-accent hover:underline">
             khám phá theo style
           </Link>{' '}

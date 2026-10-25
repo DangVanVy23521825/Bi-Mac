@@ -9,9 +9,10 @@
 // Nhãn tiếng Việt cho `ItemAttribute` chốt tại đây — đây là định nghĩa duy
 // nhất, đừng chép lại nơi khác.
 
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import type { Fit, ItemAttribute, Occasion, StylistAnswers } from '@/types/stylist'
 import { OCCASION_LABEL } from '@/components/wardrobe/ItemFacts'
+import { ALLOWED_PHOTO_TYPES, MAX_PHOTO_BYTES } from '@/features/stylist/photo-limits'
 
 export const ATTRIBUTE_LABEL: Record<ItemAttribute, string> = {
   sheer: 'Chất liệu mỏng, nhìn xuyên',
@@ -40,7 +41,28 @@ const GOAL_OPTIONS: Array<{ value: StylistAnswers['goal']; label: string }> = [
   { value: 'wardrobe-refresh', label: 'Làm mới tủ đồ hiện có' },
 ]
 
-const ACCEPTED_PHOTO_TYPES = 'image/jpeg,image/png,image/webp'
+const ACCEPTED_PHOTO_TYPES = ALLOWED_PHOTO_TYPES.join(',')
+const MAX_PHOTO_MB = Math.round(MAX_PHOTO_BYTES / 1_000_000)
+
+function isAllowedPhotoType(value: string): value is (typeof ALLOWED_PHOTO_TYPES)[number] {
+  return (ALLOWED_PHOTO_TYPES as readonly string[]).includes(value)
+}
+
+// Mirrors the route's own validation order (type, then size — see
+// `src/app/api/stylist/route.ts`) so a rejected photo is explained here,
+// before any request leaves the browser, instead of surfacing later as a
+// 413/415 that `StylistFlow` would otherwise have to translate. Each
+// message says what to do next, not just what failed — an iPhone HEIC or
+// an ordinary 5MB phone photo should never read like a flaky network.
+function describePhotoRejection(file: File): string | undefined {
+  if (!isAllowedPhotoType(file.type)) {
+    return `Bí Mặc chưa đọc được loại ảnh này${file.type ? ` (${file.type})` : ''}. Hãy chọn ảnh JPEG, PNG hoặc WebP — nhiều điện thoại lưu ảnh ở định dạng khác (ví dụ HEIC) nên có thể cần đổi định dạng trước khi tải lên.`
+  }
+  if (file.size > MAX_PHOTO_BYTES) {
+    return `Ảnh đang lớn hơn ${MAX_PHOTO_MB}MB cho phép. Hãy chọn một ảnh nhỏ hơn, hoặc chụp/xuất lại ở độ phân giải thấp hơn trước khi tải lên.`
+  }
+  return undefined
+}
 
 export type QuestionnaireSubmission = {
   answers: StylistAnswers
@@ -59,9 +81,11 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
   const [avoids, setAvoids] = useState<ItemAttribute[]>([])
   const [goal, setGoal] = useState<StylistAnswers['goal']>('style')
   const [photo, setPhoto] = useState<File | undefined>(undefined)
+  const [photoError, setPhotoError] = useState<string | undefined>(undefined)
   const [occasionError, setOccasionError] = useState(false)
 
   const photoInputId = useId()
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   function toggleOccasion(value: Occasion) {
     setOccasions((current) =>
@@ -77,11 +101,34 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
 
   function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
+    if (!file) {
+      setPhoto(undefined)
+      setPhotoError(undefined)
+      return
+    }
+
+    const rejection = describePhotoRejection(file)
+    if (rejection) {
+      setPhoto(undefined)
+      setPhotoError(rejection)
+      // Clear the native input too — otherwise the browser still shows the
+      // rejected filename next to a field we've told the user to redo.
+      if (photoInputRef.current) {
+        photoInputRef.current.value = ''
+      }
+      return
+    }
+
+    setPhotoError(undefined)
     setPhoto(file)
   }
 
   function clearPhoto() {
     setPhoto(undefined)
+    setPhotoError(undefined)
+    if (photoInputRef.current) {
+      photoInputRef.current.value = ''
+    }
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -179,12 +226,18 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
           Thêm một ảnh để Bí Mặc tham khảo thêm, nếu bạn muốn.
         </label>
         <input
+          ref={photoInputRef}
           id={photoInputId}
           type="file"
           accept={ACCEPTED_PHOTO_TYPES}
           onChange={handlePhotoChange}
           className="block w-full max-w-full"
         />
+        {photoError && (
+          <p role="alert" className="font-body text-sm text-accent">
+            {photoError}
+          </p>
+        )}
         {photo && (
           <div className="flex items-center gap-3 font-body text-sm text-accent-soft">
             <span>Đã chọn: {photo.name}</span>

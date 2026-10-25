@@ -106,16 +106,62 @@ describe('StylistFlow', () => {
     )
   })
 
-  it('fetch lỗi mạng thì hiện thông báo kèm link sang /styles', async () => {
+  it('fetch lỗi mạng thì hiện thông báo nói về mạng, kèm link sang /styles', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
 
     render(<StylistFlow avoidOptions={[]} />)
     await submitQuestionnaire()
 
     await waitFor(() => {
+      expect(screen.getByText(/mạng chập chờn/i)).toBeInTheDocument()
       expect(screen.getByRole('link', { name: /khám phá theo style/i })).toHaveAttribute(
         'href', '/styles',
       )
     })
+  })
+
+  // Trước fix, mọi `!response.ok` — kể cả 413 "ảnh vượt quá dung lượng"
+  // và 415 "loại ảnh không được hỗ trợ" từ route.ts — đổ vào cùng một
+  // trạng thái 'error' với copy đổ lỗi cho mạng. Hai test dưới khoá từng
+  // nhánh HTTP status riêng, để một ảnh bị từ chối không còn bị báo sai
+  // thành vấn đề mạng.
+  it('ảnh vượt dung lượng (413) hiện đúng lý do, không đổ lỗi cho mạng', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: 'Ảnh vượt quá dung lượng cho phép.' }), {
+          status: 413,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    )
+
+    render(<StylistFlow avoidOptions={[]} />)
+    await submitQuestionnaire()
+
+    await waitFor(() => {
+      expect(screen.getByText(/ảnh nhỏ hơn/i)).toBeInTheDocument()
+    })
+    expect(screen.queryByText(/mạng chập chờn/i)).not.toBeInTheDocument()
+  })
+
+  it('loại ảnh không được hỗ trợ (415) hiện đúng lý do, không đổ lỗi cho mạng', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: 'Loại ảnh không được hỗ trợ.' }), {
+          status: 415,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    )
+
+    render(<StylistFlow avoidOptions={[]} />)
+    await submitQuestionnaire()
+
+    await waitFor(() => {
+      expect(screen.getByText(/định dạng ảnh/i)).toBeInTheDocument()
+    })
+    expect(screen.queryByText(/mạng chập chờn/i)).not.toBeInTheDocument()
   })
 })

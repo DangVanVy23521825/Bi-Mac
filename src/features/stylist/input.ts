@@ -8,6 +8,7 @@
 
 import { z } from 'zod'
 import type { Fit, ItemAttribute, Occasion, StylistAnswers } from '@/types/stylist'
+import { ALLOWED_PHOTO_TYPES } from './photo-limits'
 
 const occasionValues: [Occasion, ...Occasion[]] = ['work', 'school', 'casual', 'date', 'event']
 const fitValues: [Fit, ...Fit[]] = ['fitted', 'relaxed', 'oversized']
@@ -23,7 +24,7 @@ const itemAttributeValues: [ItemAttribute, ...ItemAttribute[]] = [
 ]
 
 const photoSchema = z.object({
-  mediaType: z.enum(['image/jpeg', 'image/png', 'image/webp']),
+  mediaType: z.enum(ALLOWED_PHOTO_TYPES),
   data: z.instanceof(Uint8Array),
 })
 
