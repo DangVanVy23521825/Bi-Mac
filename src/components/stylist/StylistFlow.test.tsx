@@ -164,4 +164,34 @@ describe('StylistFlow', () => {
     })
     expect(screen.queryByText(/mạng chập chờn/i)).not.toBeInTheDocument()
   })
+
+  // Trước fix, trạng thái 'pending' không render gì cả: sau khi bấm "Xem
+  // gợi ý" người dùng nhìn vào một trang không đổi suốt 13-20 giây (thời
+  // gian thật của hai lượt gọi Gemini, đo ở Task hiện tại), chỉ có chữ
+  // trên nút đổi. Test này khoá việc có một khối chờ hiện ngay sau khi
+  // gửi, và biến mất đúng lúc dòng analysis tới.
+  it('hiện khối chờ ngay sau khi gửi, và nhường chỗ khi dòng analysis tới', async () => {
+    const { stream, pushLine, close } = createControlledStream()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(stream, { status: 200, headers: { 'content-type': 'application/x-ndjson' } })),
+    )
+
+    render(<StylistFlow avoidOptions={[]} />)
+    await submitQuestionnaire()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('stylist-pending')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Minimalist')).not.toBeInTheDocument()
+
+    pushLine(analysisLine)
+
+    await waitFor(() => {
+      expect(screen.getByText('Minimalist')).toBeInTheDocument()
+    })
+    expect(screen.queryByTestId('stylist-pending')).not.toBeInTheDocument()
+
+    close()
+  })
 })

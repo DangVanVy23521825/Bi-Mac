@@ -100,6 +100,51 @@ function assembleOutcome(
   }
 }
 
+// Hai lượt gọi Gemini mất 13-20 giây thật (đo trên key thật, xem
+// `STYLIST_TIMEOUT_MS` trong `src/app/api/stylist/route.ts`). Trước đây
+// trạng thái `pending` không render gì cả, nên suốt quãng đó trang đứng im
+// và chỉ có chữ trên nút đổi — không phân biệt được với một lần bấm hụt.
+// Khối dưới dựng sẵn hình hài của kết quả sắp tới để quãng chờ có hình.
+function SkeletonLines({ rows = 3 }: { rows?: number }) {
+  const widths = ['w-11/12', 'w-9/12', 'w-7/12', 'w-10/12']
+  return (
+    <div aria-hidden="true" className="space-y-3">
+      {Array.from({ length: rows }, (_, index) => (
+        <div
+          key={index}
+          className={`h-3 animate-pulse bg-muted/35 motion-reduce:animate-none ${widths[index % widths.length]}`}
+        />
+      ))}
+    </div>
+  )
+}
+
+function PendingState() {
+  return (
+    <div data-testid="stylist-pending" className="space-y-10">
+      <p role="status" className="font-body text-sm text-accent-soft">
+        Bí Mặc đang đọc câu trả lời của bạn và chọn trong tủ đồ — thường mất khoảng 15 đến 20 giây.
+      </p>
+
+      <section className="space-y-4">
+        <div
+          aria-hidden="true"
+          className="h-6 w-64 animate-pulse bg-muted/35 motion-reduce:animate-none"
+        />
+        <SkeletonLines />
+      </section>
+
+      <section className="space-y-4">
+        <div
+          aria-hidden="true"
+          className="h-6 w-48 animate-pulse bg-muted/35 motion-reduce:animate-none"
+        />
+        <SkeletonLines rows={2} />
+      </section>
+    </div>
+  )
+}
+
 // Renders the stage-1 `analysis` line the moment it arrives, while stage 2
 // (`explain`, the outfit prose) is still in flight. Deliberately does not
 // reuse `StylistResult` here: that component treats an empty `outfits`
@@ -152,9 +197,12 @@ function PartialAnalysis({ analysis }: { analysis: AnalysisStage }) {
         </section>
       )}
 
-      <p role="status" className="font-body text-sm text-accent-soft">
-        Đang tạo outfit cụ thể cho bạn…
-      </p>
+      <section className="space-y-4">
+        <p role="status" className="font-body text-sm text-accent-soft">
+          Đang tạo outfit cụ thể cho bạn…
+        </p>
+        <SkeletonLines rows={2} />
+      </section>
     </div>
   )
 }
@@ -237,6 +285,8 @@ export function StylistFlow({ avoidOptions }: Props) {
           trong lúc chờ.
         </p>
       )}
+
+      {state.status === 'pending' && <PendingState />}
 
       {state.status === 'partial' && <PartialAnalysis analysis={state.analysis} />}
 
