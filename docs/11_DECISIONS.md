@@ -192,11 +192,23 @@ Record durable decisions here. Keep entries concise.
 
 ## ADR-019 — Separate timeout budget for the photo-attached analyze call
 
-**Status:** Accepted
+**Status:** Accepted — the two-budget split stands; the text-only value it set (`STYLIST_TIMEOUT_MS = 12_000`) was superseded by ADR-020.
 
 **Decision:** The AI Stylist pipeline (`src/features/stylist/pipeline.ts`) now takes two timeout budgets instead of one: `timeoutMs` (text-only `analyze`, and always for `explain`, which never carries a photo) and `photoTimeoutMs` (the `analyze` call specifically when `input.photo` is present). The route (`src/app/api/stylist/route.ts`) sets `STYLIST_TIMEOUT_MS = 12_000` and `STYLIST_PHOTO_TIMEOUT_MS = 30_000`.
 
 **Reason:** Task 18's real-key verification measured the real Gemini provider directly instead of guessing: with a 60s cap in place to observe true latency, four photo-attached requests reached the `analysis` stage at 9.97s, 12.22s, 12.47s, and 14.80s — three of four at or above the original single 12s budget — while a text-only request on the same server reached it in 8.26s. The single shared timeout had been sized for the lighter text-only workload (full catalog vocabulary + system prompt + schema-constrained output) and was cutting off the heavier photo workload (the same plus the image part) by default, silently handing every photo submission to the deterministic fallback even on a working key/model/network path. Giving the photo case its own, larger budget (roughly 2x the observed max, to absorb jitter and real user photos larger than the tiny test image used to measure) fixes the actual mismatch — a workload-sizing problem, not a configuration mistake — without touching the text-only budget, which was already adequate.
+
+---
+
+## ADR-020 — Text-only stylist budget raised to 25s to survive a cold start
+
+**Status:** Accepted
+
+**Decision:** `STYLIST_TIMEOUT_MS` in `src/app/api/stylist/route.ts` goes from `12_000` to `25_000`, and `DEFAULT_TIMEOUT_MS` in `src/features/stylist/pipeline.ts` follows it from `12000` to `25_000`. `STYLIST_PHOTO_TIMEOUT_MS` stays at `30_000`; the two-budget split from ADR-019 is unchanged, only the text-only number moves.
+
+**Reason:** ADR-019 sized the text-only budget off a warm ~8-9s measurement, which left no headroom for a cold start. Re-measured on 2026-10-26 against the real key: three raw `generateContent` calls took 9.7s, 9.8s and 10.4s, and four warm end-to-end requests through the route — two Gemini calls each — returned `providerId: 'gemini'` without degrading, in 13.5s, 19.9s, 20.5s and 20.7s. The failure was isolated to the *first* request after the server booted, which degraded at 13.3s: module init plus route compilation land on top of the same ~10s model call, and 12s cannot absorb both. That matters more than a warm-path number, because on a serverless platform every cold instance repeats that first request — so the submission most likely to be a real visitor's first impression was the one most likely to show the fallback banner on a perfectly working key, model and network. 25s is roughly 2.5x the warm per-call observation. The worst case is now analyze 25s + explain 25s = 50s (55s on the photo path), well inside the platform's 300s function limit, and the staged NDJSON response means the user still sees the style/palette direction as soon as stage 1 lands rather than waiting on the whole budget.
+
+**Rejected:** dropping the budget entirely and letting the provider call run unbounded — the deterministic fallback exists precisely so a stuck call degrades into a usable answer instead of an open connection, and removing the ceiling would trade a rare wrong fallback for an occasional hang with no answer at all.
 
 ---
 

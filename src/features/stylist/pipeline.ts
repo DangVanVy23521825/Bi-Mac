@@ -31,7 +31,12 @@ import type { AnalyzeRequest, ExplainRequest, StylistProvider } from '@/lib/ai/p
 import type { StylistAnalysis, StylistExplanation } from '@/lib/ai/schema'
 import type { StylistAnswers } from '@/types/stylist'
 
-const DEFAULT_TIMEOUT_MS = 12000
+// Fallback for callers that pass no `timeoutMs`. Kept in step with
+// `STYLIST_TIMEOUT_MS` in `src/app/api/stylist/route.ts` — the route always
+// passes its own value, so this only governs other callers, but letting the
+// two drift would mean a second, quietly different answer to the same
+// question. See ADR-020 for why the number is what it is.
+const DEFAULT_TIMEOUT_MS = 25_000
 
 const EMPTY_ANALYSIS_NOTE =
   'Bí Mặc chưa thể phân tích thêm từ thông tin hiện tại — bạn vẫn có thể khám phá outfit và style gợi ý dưới đây.'

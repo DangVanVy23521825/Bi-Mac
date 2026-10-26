@@ -60,10 +60,22 @@ export const DAILY_LIMIT = 200
 const DAILY_WINDOW_MS = 24 * 60 * 60 * 1000
 // Text-only budget: the `analyze` call with no photo attached, and the
 // `explain` call always (it never carries a photo — see
-// `buildExplainContent` in `src/lib/ai/gemini.ts`). Measured against the
-// real Gemini provider, a text-only analyze call finishes in ~8-9s warm;
-// 12s keeps headroom without leaving a hung request open for a long time.
-export const STYLIST_TIMEOUT_MS = 12_000
+// `buildExplainContent` in `src/lib/ai/gemini.ts`).
+//
+// Was 12s, sized off a warm ~8-9s measurement. That left no room for a
+// cold start: re-measured against the real key (2026-10-26), three raw
+// `generateContent` calls took 9.7s / 9.8s / 10.4s, and four warm
+// end-to-end requests through this route — two Gemini calls each — came
+// back in 13.5s / 19.9s / 20.5s / 20.7s without degrading. But the very
+// first request after `next dev` booted *did* degrade at 13.3s: module
+// init and route compilation land on top of the same ~10s model call, and
+// 12s simply is not enough to absorb that. On a serverless platform every
+// cold instance repeats that first request, so the one case most likely to
+// be a real visitor's first impression was the one most likely to fall
+// back. 25s is ~2.5x the warm per-call observation — enough headroom for
+// a cold start, still short enough that a genuinely stuck call gives up
+// rather than holding the connection open.
+export const STYLIST_TIMEOUT_MS = 25_000
 // Photo budget: the `analyze` call specifically when a photo is attached.
 // Real-key measurement (Task 18 follow-up, 4 runs, 60s cap to observe the
 // true latency instead of guessing): TTFB to the `analysis` NDJSON line —
