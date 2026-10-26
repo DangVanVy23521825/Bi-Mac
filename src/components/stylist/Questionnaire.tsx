@@ -9,7 +9,7 @@
 // Nhãn tiếng Việt cho `ItemAttribute` chốt tại đây — đây là định nghĩa duy
 // nhất, đừng chép lại nơi khác.
 
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { OCCASIONS, type Fit, type ItemAttribute, type Occasion, type StylistAnswers } from '@/types/stylist'
 import { OCCASION_LABEL } from '@/components/wardrobe/ItemFacts'
 import { ALLOWED_PHOTO_TYPES, MAX_PHOTO_BYTES } from '@/features/stylist/photo-limits'
@@ -44,6 +44,17 @@ const GOAL_OPTIONS: Array<{ value: StylistAnswers['goal']; label: string }> = [
   { value: 'colors', label: 'Tìm bảng màu hợp' },
   { value: 'wardrobe-refresh', label: 'Làm mới tủ đồ hiện có' },
 ]
+
+// Tailwind preflight xoá viền/padding của mọi control gốc, nên checkbox,
+// radio và nút của `<input type="file">` đều render thành chữ trơn trên nền
+// ivory — không còn gì cho biết đó là thứ bấm được. Mỗi lựa chọn giờ là một
+// chip có viền, tô lại khi được chọn; `has-[:checked]` giữ nguyên input thật
+// làm nguồn trạng thái duy nhất nên hành vi bàn phím và trình đọc màn hình
+// không đổi so với control gốc.
+const CHOICE_CLASS =
+  'flex cursor-pointer items-center gap-2.5 border border-muted/50 px-4 py-2.5 font-body text-sm transition hover:border-accent/70 has-[:checked]:border-accent has-[:checked]:bg-accent/5 has-[:checked]:text-accent has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent'
+
+const CHOICE_INPUT_CLASS = 'h-4 w-4 shrink-0 cursor-pointer accent-accent'
 
 const ACCEPTED_PHOTO_TYPES = ALLOWED_PHOTO_TYPES.join(',')
 const MAX_PHOTO_MB = Math.round(MAX_PHOTO_BYTES / 1_000_000)
@@ -85,11 +96,54 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
   const [avoids, setAvoids] = useState<ItemAttribute[]>([])
   const [goal, setGoal] = useState<StylistAnswers['goal']>('style')
   const [photo, setPhoto] = useState<File | undefined>(undefined)
+  const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined)
   const [photoError, setPhotoError] = useState<string | undefined>(undefined)
   const [occasionError, setOccasionError] = useState(false)
 
   const photoInputId = useId()
   const photoInputRef = useRef<HTMLInputElement>(null)
+
+  // Blob URL đang treo, giữ ngoài state để lúc unmount còn thu hồi được —
+  // ADR-012: ảnh của người dùng không giữ lại quá lượt này, kể cả dưới dạng
+  // một blob URL bị bỏ quên.
+  const photoPreviewRef = useRef<string | undefined>(undefined)
+
+  useEffect(() => {
+    return () => {
+      if (photoPreviewRef.current) {
+        URL.revokeObjectURL(photoPreviewRef.current)
+      }
+    }
+  }, [])
+
+  // Bản xem trước là tuỳ chọn, không phải điều kiện để chọn được ảnh: môi
+  // trường test không dựng được object URL từ `File` của jsdom
+  // (`createObjectURL` có mặt nhưng ném `ERR_INVALID_ARG_TYPE`), nên chỗ này
+  // bắt lỗi thay vì chỉ kiểm tra API có tồn tại. Thiếu thumbnail thì mất
+  // thumbnail, không được phép làm hỏng cả form chọn ảnh.
+  //
+  // Dựng URL ngay trong handler thay vì trong một effect theo dõi `photo`:
+  // đây là một side effect của hành động chọn file, không phải việc đồng bộ
+  // state với hệ thống ngoài.
+  function showPreviewFor(file: File | undefined) {
+    if (photoPreviewRef.current) {
+      URL.revokeObjectURL(photoPreviewRef.current)
+      photoPreviewRef.current = undefined
+    }
+
+    if (!file) {
+      setPhotoPreview(undefined)
+      return
+    }
+
+    try {
+      const objectUrl = URL.createObjectURL(file)
+      photoPreviewRef.current = objectUrl
+      setPhotoPreview(objectUrl)
+    } catch {
+      setPhotoPreview(undefined)
+    }
+  }
 
   function toggleOccasion(value: Occasion) {
     setOccasions((current) =>
@@ -108,6 +162,7 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
     if (!file) {
       setPhoto(undefined)
       setPhotoError(undefined)
+      showPreviewFor(undefined)
       return
     }
 
@@ -115,6 +170,7 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
     if (rejection) {
       setPhoto(undefined)
       setPhotoError(rejection)
+      showPreviewFor(undefined)
       // Clear the native input too — otherwise the browser still shows the
       // rejected filename next to a field we've told the user to redo.
       if (photoInputRef.current) {
@@ -125,11 +181,13 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
 
     setPhotoError(undefined)
     setPhoto(file)
+    showPreviewFor(file)
   }
 
   function clearPhoto() {
     setPhoto(undefined)
     setPhotoError(undefined)
+    showPreviewFor(undefined)
     if (photoInputRef.current) {
       photoInputRef.current.value = ''
     }
@@ -155,9 +213,10 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
         <p className="font-body text-sm text-accent-soft">Chọn ít nhất một dịp bạn hay cần phối đồ.</p>
         <div className="flex flex-wrap gap-4">
           {OCCASION_ORDER.map((occasion) => (
-            <label key={occasion} className="flex items-center gap-2 font-body text-sm">
+            <label key={occasion} className={CHOICE_CLASS}>
               <input
                 type="checkbox"
+                className={CHOICE_INPUT_CLASS}
                 checked={occasions.includes(occasion)}
                 onChange={() => toggleOccasion(occasion)}
               />
@@ -176,10 +235,11 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
         <legend className="font-display text-xl">Dáng áo bạn thích</legend>
         <div className="flex flex-wrap gap-4">
           {FIT_OPTIONS.map((option) => (
-            <label key={option.value} className="flex items-center gap-2 font-body text-sm">
+            <label key={option.value} className={CHOICE_CLASS}>
               <input
                 type="radio"
                 name="fitPreference"
+                className={CHOICE_INPUT_CLASS}
                 checked={fitPreference === option.value}
                 onChange={() => setFitPreference(option.value)}
               />
@@ -194,9 +254,10 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
           <legend className="font-display text-xl">Muốn tránh</legend>
           <div className="flex flex-wrap gap-4">
             {avoidOptions.map((attribute) => (
-              <label key={attribute} className="flex items-center gap-2 font-body text-sm">
+              <label key={attribute} className={CHOICE_CLASS}>
                 <input
                   type="checkbox"
+                  className={CHOICE_INPUT_CLASS}
                   checked={avoids.includes(attribute)}
                   onChange={() => toggleAvoid(attribute)}
                 />
@@ -211,10 +272,11 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
         <legend className="font-display text-xl">Mục tiêu lần này</legend>
         <div className="flex flex-wrap gap-4">
           {GOAL_OPTIONS.map((option) => (
-            <label key={option.value} className="flex items-center gap-2 font-body text-sm">
+            <label key={option.value} className={CHOICE_CLASS}>
               <input
                 type="radio"
                 name="goal"
+                className={CHOICE_INPUT_CLASS}
                 checked={goal === option.value}
                 onChange={() => setGoal(option.value)}
               />
@@ -224,36 +286,82 @@ export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-3 border-t border-muted/40 pt-8">
+      <fieldset className="space-y-4 border-t border-muted/40 pt-8">
         <legend className="font-display text-xl">Ảnh (tuỳ chọn)</legend>
-        <label htmlFor={photoInputId} className="block font-body text-sm">
-          Thêm một ảnh để Bí Mặc tham khảo thêm, nếu bạn muốn.
-        </label>
-        <input
-          ref={photoInputRef}
-          id={photoInputId}
-          type="file"
-          accept={ACCEPTED_PHOTO_TYPES}
-          onChange={handlePhotoChange}
-          className="block w-full max-w-full"
-        />
-        {photoError && (
-          <p role="alert" className="font-body text-sm text-accent">
-            {photoError}
-          </p>
-        )}
-        {photo && (
-          <div className="flex items-center gap-3 font-body text-sm text-accent-soft">
-            <span>Đã chọn: {photo.name}</span>
+        <p className="max-w-xl font-body text-sm text-accent-soft">
+          Một ảnh chụp cả người giúp Bí Mặc đọc thêm dáng và tông màu bạn hay mặc. Bỏ qua
+          vẫn có gợi ý đầy đủ.
+        </p>
+
+        {/* Input thật bị ẩn khỏi mắt thường chứ không bị tắt: nó vẫn nhận
+            focus bàn phím, vẫn là thứ trình đọc màn hình đọc được, và vẫn
+            là nơi `handlePhotoChange` gắn vào. Cái nhìn thấy là `<label>`
+            ngay sau nó — nhờ vậy chữ trên nút là chữ tiếng Việt của Bí Mặc
+            thay vì chữ "Chọn tệp" do trình duyệt tự đặt theo locale, thứ
+            không style được. `peer` cần input là anh em ruột liền kề của
+            label nên hai thẻ phải nằm cùng một div. */}
+        <div className="flex flex-wrap items-center gap-4">
+          <input
+            ref={photoInputRef}
+            id={photoInputId}
+            type="file"
+            accept={ACCEPTED_PHOTO_TYPES}
+            onChange={handlePhotoChange}
+            className="peer sr-only"
+          />
+          <label
+            htmlFor={photoInputId}
+            className="inline-flex cursor-pointer items-center gap-2.5 border border-accent px-6 py-3 font-body text-xs uppercase tracking-[0.14em] text-accent transition hover:bg-accent hover:text-ivory peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <path d="M10 13V3.5m0 0L6.8 6.7M10 3.5l3.2 3.2" />
+              <path d="M3.5 12.5V15a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5v-2.5" />
+            </svg>
+            Thêm một ảnh
+          </label>
+
+          {photo && (
             <button
               type="button"
               onClick={clearPhoto}
-              className="underline-offset-4 hover:text-accent hover:underline"
+              className="font-body text-sm text-accent-soft underline underline-offset-4 transition hover:text-accent"
             >
               Bỏ ảnh
             </button>
+          )}
+        </div>
+
+        {photo && (
+          <div className="flex items-center gap-4">
+            {photoPreview && (
+              // Blob URL cục bộ, không phải asset của catalog — `next/image`
+              // không tối ưu được nó và sẽ chỉ thêm một vòng loader thừa.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={photoPreview}
+                alt={`Ảnh bạn vừa chọn: ${photo.name}`}
+                className="h-20 w-16 shrink-0 border border-muted/40 object-cover"
+              />
+            )}
+            <span className="font-body text-sm text-accent-soft">{photo.name}</span>
           </div>
         )}
+
+        {photoError && (
+          <p role="alert" className="max-w-xl font-body text-sm text-accent">
+            {photoError}
+          </p>
+        )}
+
         <p className="font-body text-xs text-accent-soft">
           Ảnh sẽ được gửi tới Google để phân tích trong lần này và không được lưu lại sau đó.
         </p>

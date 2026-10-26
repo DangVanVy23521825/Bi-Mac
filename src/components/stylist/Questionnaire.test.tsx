@@ -1,6 +1,6 @@
 import userEvent from '@testing-library/user-event'
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Questionnaire } from './Questionnaire'
 
 describe('Questionnaire', () => {
@@ -95,5 +95,42 @@ describe('Questionnaire', () => {
     await userEvent.click(screen.getByRole('button', { name: /Xem gợi ý/ }))
     const call = onSubmit.mock.calls[0] as [{ answers: unknown; photo?: File }] | undefined
     expect(call?.[0].photo?.name).toBe('anh.jpg')
+  })
+
+  // jsdom không cài `URL.createObjectURL`, nên bản xem trước phải tự chịu
+  // được việc API đó vắng mặt (xem guard trong `Questionnaire`). Test nào
+  // cần thumbnail thật thì tự cắm stub, rồi gỡ ngay sau đó để không rò
+  // sang test khác trong cùng file.
+  afterEach(() => {
+    Reflect.deleteProperty(URL, 'createObjectURL')
+    Reflect.deleteProperty(URL, 'revokeObjectURL')
+  })
+
+  // Trước fix, ô chọn ảnh là `<input type="file">` trần: Tailwind preflight
+  // xoá viền/padding của `::file-selector-button` nên nút "Chọn tệp" render
+  // thành chữ đen trơn, không ai nhận ra là nút bấm. Nút thật bây giờ là
+  // một `<label>` có chữ của Bí Mặc, trỏ vào input bị ẩn khỏi mắt thường.
+  it('nút chọn ảnh là một control bấm được, có chữ của Bí Mặc', () => {
+    render(<Questionnaire avoidOptions={[]} onSubmit={vi.fn()} pending={false} />)
+    const input = screen.getByLabelText(/Thêm một ảnh/i)
+    expect(input).toHaveAttribute('type', 'file')
+    expect(document.querySelector(`label[for="${input.id}"]`)).toHaveTextContent(/Thêm một ảnh/i)
+  })
+
+  it('ảnh hợp lệ thì hiện thumbnail xem trước, bỏ ảnh thì thu hồi object URL', async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:xem-truoc')
+    const revokeObjectURL = vi.fn()
+    URL.revokeObjectURL = revokeObjectURL
+
+    render(<Questionnaire avoidOptions={[]} onSubmit={vi.fn()} pending={false} />)
+    const validFile = new File([new Uint8Array(10)], 'anh.jpg', { type: 'image/jpeg' })
+    await userEvent.upload(screen.getByLabelText(/Thêm một ảnh/i), validFile)
+
+    const preview = await screen.findByRole('img', { name: /anh\.jpg/i })
+    expect(preview).toHaveAttribute('src', 'blob:xem-truoc')
+
+    await userEvent.click(screen.getByRole('button', { name: /Bỏ ảnh/ }))
+    expect(screen.queryByRole('img', { name: /anh\.jpg/i })).not.toBeInTheDocument()
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:xem-truoc')
   })
 })
