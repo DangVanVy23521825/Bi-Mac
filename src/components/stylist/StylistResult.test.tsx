@@ -82,4 +82,28 @@ describe('StylistResult', () => {
     expect(screen.getByText(/Chưa đủ dữ kiện/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Khám phá theo style/ })).toBeInTheDocument()
   })
+
+  // Trước fix, StylistResult không render một tấm ảnh nào — kết quả của một
+  // sản phẩm thời trang là một khối chữ thuần, dù `StylistOutcome` đã mang
+  // sẵn `image` cho cả outfit lẫn món đồ (xem pipeline.ts). Hai test dưới
+  // khoá việc ảnh thật lên màn hình, và việc thiếu ảnh vẫn giữ đúng chỗ
+  // thay vì làm nhảy bố cục.
+  it('render ảnh của outfit và của món đồ khi catalog có ảnh', () => {
+    render(
+      <StylistResult
+        outcome={{
+          ...outcome,
+          outfits: [{ ...outcome.outfits[0]!, image: '/images/outfits/modern-classic-di-lam.jpg' }],
+          items: [{ ...outcome.items[0]!, image: '/images/items/blazer.jpg' }],
+        }}
+      />,
+    )
+    expect(screen.getByAltText('Modern Classic đi làm')).toBeInTheDocument()
+    expect(screen.getByAltText('Blazer')).toBeInTheDocument()
+  })
+
+  it('outfit/món chưa có ảnh vẫn giữ chỗ ảnh thay vì bỏ trống', () => {
+    const { container } = render(<StylistResult outcome={outcome} />)
+    expect(container.querySelectorAll('[data-placeholder="true"]').length).toBeGreaterThanOrEqual(2)
+  })
 })

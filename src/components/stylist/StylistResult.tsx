@@ -9,8 +9,13 @@
 //
 // Section order follows `outcome.goal` (set by Task 13's pipeline) so this
 // component needs only one prop to decide layout.
+//
+// Ảnh outfit/món đồ đi qua `EditorialImage` như mọi bề mặt khác của trang,
+// kể cả khi `image` là null: nó dựng sẵn khối placeholder đúng tỉ lệ, nên
+// một món chưa có ảnh không làm nhảy bố cục của cả danh sách.
 
 import Link from 'next/link'
+import { EditorialImage } from '@/components/ui/EditorialImage'
 import type { StylistOutcome } from '@/features/stylist/pipeline'
 
 type StyleDirection = StylistOutcome['styleDirections'][number]
@@ -137,21 +142,28 @@ function OutfitsSection({ outfits }: { outfits: OutfitEntry[] }) {
       <ul className="space-y-8">
         {outfits.map((outfit: OutfitEntry) => (
           <li key={outfit.slug} className="border-t border-muted/40 pt-6">
-            <h3 className="font-display text-xl">{outfit.name}</h3>
-            <p className="mt-2 max-w-2xl font-body text-sm text-accent-soft">{outfit.whyThisWorks}</p>
-            <ul className="mt-4 flex flex-wrap gap-4">
-              {outfit.items.map((item) => (
-                <li key={item.slug}>
-                  <Link
-                    href={item.href}
-                    data-testid="recommended-outfit-item"
-                    className="font-body text-sm text-accent-soft underline-offset-4 hover:text-accent hover:underline"
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <article className="grid gap-6 sm:grid-cols-[minmax(0,16rem)_1fr] sm:items-start">
+              <EditorialImage src={outfit.image} alt={outfit.name} ratio="look" />
+              <div>
+                <h3 className="font-display text-xl">{outfit.name}</h3>
+                <p className="mt-2 max-w-2xl font-body text-sm text-accent-soft">
+                  {outfit.whyThisWorks}
+                </p>
+                <ul className="mt-4 flex flex-wrap gap-4">
+                  {outfit.items.map((item) => (
+                    <li key={item.slug}>
+                      <Link
+                        href={item.href}
+                        data-testid="recommended-outfit-item"
+                        className="font-body text-sm text-accent-soft underline-offset-4 hover:text-accent hover:underline"
+                      >
+                        {item.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </article>
           </li>
         ))}
       </ul>
@@ -169,13 +181,18 @@ function ItemsSection({ items }: { items: ItemEntry[] }) {
       <ul className="space-y-4">
         {items.map((item: ItemEntry) => (
           <li key={item.slug} className="border-t border-muted/40 pt-4">
-            <Link
-              href={item.href}
-              className="font-display text-lg text-accent underline-offset-4 hover:underline"
-            >
-              {item.name}
-            </Link>
-            <p className="mt-1 max-w-xl font-body text-sm text-accent-soft">{item.excerpt}</p>
+            <div className="grid gap-4 sm:grid-cols-[6rem_1fr] sm:items-start">
+              <EditorialImage src={item.image} alt={item.name} ratio="look" />
+              <div>
+                <Link
+                  href={item.href}
+                  className="font-display text-lg text-accent underline-offset-4 hover:underline"
+                >
+                  {item.name}
+                </Link>
+                <p className="mt-1 max-w-xl font-body text-sm text-accent-soft">{item.excerpt}</p>
+              </div>
+            </div>
           </li>
         ))}
       </ul>
