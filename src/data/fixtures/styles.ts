@@ -5,7 +5,7 @@ export const styles: Style[] = [
     slug: 'modern-classic',
     name: 'Modern Classic',
     tagline: 'Đường cắt gọn, màu tiết chế, mặc được mười năm không cũ.',
-    image: null,
+    image: '/images/styles/modern-classic.jpg',
     colorSlugs: ['kem', 'chocolate', 'den'],
     paragraphs: [
       'Modern Classic không phải là "đơn giản" theo nghĩa thiếu chi tiết — nó là có chọn lọc. Một outfit modern classic thường chỉ dùng hai hoặc ba màu, nhưng mỗi món đều có cấu trúc rõ: sơ mi trắng có đường nẹp cúc đứng, quần wide-leg chocolate có cạp cao kéo tỷ lệ, blazer có vai dựng. Sự rõ ràng ở từng món, cộng với số màu hạn chế, là lý do phong cách này không lỗi thời — nó không dựa vào chi tiết thời thượng nào để gây ấn tượng, nên không có gì để lỗi mốt.',
@@ -39,7 +39,7 @@ export const styles: Style[] = [
     slug: 'minimalist',
     name: 'Minimalist',
     tagline: 'Ít chi tiết nhất có thể, nhưng mỗi chi tiết đều đúng chỗ.',
-    image: null,
+    image: '/images/styles/minimalist.jpg',
     colorSlugs: ['kem', 'den', 'be-xam'],
     paragraphs: [
       'Minimalist không đồng nghĩa với màu đơn sắc tuyệt đối — kem, đen, be-xám vẫn là ba màu, không phải một. Thứ bị loại bỏ là chi tiết thừa: không túi áo trang trí, không đường diễu chỉ màu, không khóa kéo hở. Sơ mi trắng và blazer là hai món đại diện rõ nhất, vì cả hai đạt cảm giác "nghiêm túc" chỉ bằng đường cắt, không cần thêm họa tiết hay phụ kiện đi kèm.',
@@ -56,7 +56,7 @@ export const styles: Style[] = [
     slug: 'soft-feminine',
     name: 'Soft Feminine',
     tagline: 'Mềm mà không ngọt. Dáng rủ, màu ấm, đường viền nhẹ.',
-    image: null,
+    image: '/images/styles/soft-feminine.jpg',
     colorSlugs: ['kem', 'burgundy', 'be-xam'],
     paragraphs: [
       'Soft Feminine dựa vào độ rủ của vải nhiều hơn màu sắc để tạo cảm giác mềm — áo lụa và chân váy midi đều là vải rơi theo đường cơ thể, không giữ nếp gấp như vải dệt thoi cứng. Đây là điểm phân biệt với "ngọt": phong cách này mềm vì chất liệu, không phải vì màu pastel hay chi tiết bèo nhún.',
@@ -73,7 +73,7 @@ export const styles: Style[] = [
     slug: 'casual-chic',
     name: 'Casual Chic',
     tagline: 'Thoải mái nhưng vẫn có chủ ý. Thường ngày mà không tạm bợ.',
-    image: null,
+    image: '/images/styles/casual-chic.jpg',
     colorSlugs: ['kem', 'den', 'chocolate'],
     paragraphs: [
       'Casual Chic khác "mặc tạm" ở một điểm: luôn có ít nhất một món đứng dáng để giữ outfit không bị xô lệch. Quần wide-leg chocolate là món đó — ống rộng nhưng cạp cao và vải đủ nặng để giữ form suốt ngày, nên dù phối với món thoải mái khác, outfit vẫn có một đường thẳng dọc làm điểm neo.',
