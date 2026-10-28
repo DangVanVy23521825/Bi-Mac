@@ -176,7 +176,7 @@ export const items: FashionItem[] = [
     category: 'tops',
     excerpt:
       'Áo dệt kim mỏng ôm nhẹ theo thân, mịn hơn cotton và mỏng hơn cardigan — lớp nền để xếp lớp mà không dày cộm.',
-    image: null,
+    image: '/images/items/ao-det-kim-mong.jpg',
     colorSlugs: ['kem', 'be-xam'],
     styleSlugs: ['minimalist', 'casual-chic', 'quiet-luxury'],
     occasions: ['casual', 'school', 'work'],
@@ -201,7 +201,7 @@ export const items: FashionItem[] = [
     category: 'bottoms',
     excerpt:
       'Ống côn nhẹ, cạp vừa, đường ly giữa thẳng tắp — nghiêm túc hơn cả quần wide-leg chocolate.',
-    image: null,
+    image: '/images/items/quan-au.jpg',
     colorSlugs: ['den', 'chocolate'],
     styleSlugs: ['modern-classic', 'minimalist'],
     occasions: ['work', 'event'],
