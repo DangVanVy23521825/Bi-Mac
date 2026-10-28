@@ -6,7 +6,7 @@ export const outfits: Outfit[] = [
     name: 'Modern Classic đi làm',
     whyItWorks:
       'Sơ mi trắng giữ phần trên gọn, ống quần rộng cân lại tỷ lệ, và cả bộ chỉ dùng ba màu nên không có chi tiết nào phải giành chú ý. Túi có kết cấu màu chocolate lặp lại màu quần, thêm một điểm neo cứng mà không kéo thêm màu thứ tư vào set.',
-    image: null,
+    image: '/images/outfits/modern-classic-di-lam.jpg',
     itemSlugs: ['so-mi-trang', 'quan-wide-leg-chocolate', 'loafer', 'tui-co-ket-cau'],
     styleSlugs: ['modern-classic'],
     occasions: ['work'],
@@ -16,7 +16,7 @@ export const outfits: Outfit[] = [
     name: 'Sơ mi chân váy thanh lịch',
     whyItWorks:
       'Sơ mi trắng bỏ gọn vào chân váy midi giữ đường eo rõ, blazer khoác ngoài thêm vai cấu trúc để nâng outfit từ công sở lên đủ chỉn chu cho sự kiện mà không đổi món nào. Ba màu trung tính — kem, be-xám hoặc đen, chocolate ở loafer — giữ tổng thể yên tĩnh, để cấu trúc vai và đường eo làm điểm nhấn chính.',
-    image: null,
+    image: '/images/outfits/so-mi-chan-vay-thanh-lich.jpg',
     itemSlugs: ['so-mi-trang', 'chan-vay-midi', 'blazer', 'loafer'],
     styleSlugs: ['modern-classic'],
     occasions: ['work', 'event'],
