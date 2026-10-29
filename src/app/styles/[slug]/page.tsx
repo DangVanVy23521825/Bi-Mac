@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { OutfitLook } from '@/components/editorial/OutfitLook'
+import { CtaLink } from '@/components/ui/CtaLink'
 import { EditorialImage } from '@/components/ui/EditorialImage'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import {
@@ -125,12 +126,11 @@ export default async function StyleDetailPage({ params }: { params: Promise<Para
           Đi tiếp
         </p>
         <h2 className="mt-4 font-display text-3xl">Muốn gợi ý riêng cho bạn?</h2>
-        <Link
-          href="/stylist"
-          className="mt-8 inline-block border border-accent px-8 py-3 font-body text-sm uppercase tracking-[0.14em] text-accent hover:bg-accent hover:text-ivory"
-        >
-          Thử AI phối đồ
-        </Link>
+        <div className="mt-8">
+          <CtaLink href="/stylist" variant="secondary">
+            Thử AI phối đồ
+          </CtaLink>
+        </div>
       </section>
     </div>
   )

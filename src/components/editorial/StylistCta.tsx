@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { CtaLink } from '@/components/ui/CtaLink'
 
 export function StylistCta() {
   return (
@@ -11,12 +11,9 @@ export function StylistCta() {
         <p className="mt-5 font-body text-base text-accent-soft">
           Trả lời vài câu hỏi, Bí Mặc gợi ý hướng style, bảng màu và outfit cụ thể cho bạn.
         </p>
-        <Link
-          href="/stylist"
-          className="mt-8 inline-block border border-accent px-8 py-3 font-body text-sm uppercase tracking-[0.14em] text-accent hover:bg-accent hover:text-ivory"
-        >
-          Thử AI phối đồ
-        </Link>
+        <div className="mt-8">
+          <CtaLink href="/stylist">Thử AI phối đồ</CtaLink>
+        </div>
       </div>
     </section>
   )

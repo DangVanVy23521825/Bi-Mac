@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { CtaLink } from '@/components/ui/CtaLink'
 import { EditorialImage } from '@/components/ui/EditorialImage'
 
 export function EditorialHero() {
@@ -16,12 +16,16 @@ export function EditorialHero() {
         <p className="mt-6 max-w-sm font-body text-base text-accent-soft">
           Ba màu làm nên mùa này, và cách mặc chúng mà vẫn giữ outfit thanh lịch.
         </p>
-        <Link
-          href="/wardrobe"
-          className="mt-8 inline-block font-body text-sm uppercase tracking-[0.14em] text-accent underline-offset-4 hover:underline"
-        >
-          Vào tủ đồ
-        </Link>
+
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          <CtaLink href="/stylist">Phối đồ cho tôi</CtaLink>
+          <CtaLink href="/wardrobe" variant="secondary">
+            Vào tủ đồ
+          </CtaLink>
+        </div>
+        <p className="mt-4 font-body text-xs text-accent-soft">
+          Bốn câu hỏi · ảnh là tuỳ chọn · không cần tạo tài khoản
+        </p>
       </div>
       <EditorialImage
         src="/images/hero/thu-2026.jpg"

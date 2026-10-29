@@ -2,6 +2,7 @@ import { ColorSwatch } from '@/components/editorial/ColorSwatch'
 import { EditorialHero } from '@/components/editorial/EditorialHero'
 import { FashionItemTile } from '@/components/editorial/FashionItemTile'
 import { OutfitLook } from '@/components/editorial/OutfitLook'
+import { StartHere } from '@/components/editorial/StartHere'
 import { StoryCard } from '@/components/editorial/StoryCard'
 import { StylistCta } from '@/components/editorial/StylistCta'
 import { EditorialImage } from '@/components/ui/EditorialImage'
@@ -21,6 +22,8 @@ export default async function Home() {
   return (
     <>
       <EditorialHero />
+
+      <StartHere />
 
       <section className="mx-auto max-w-6xl px-6 py-16">
         <SectionHeading eyebrow="Trending now" title="Đang được mặc nhiều" />
