@@ -5,7 +5,7 @@ export const stories: Story[] = [
     slug: 'mua-thu-nay-mac-mau-gi',
     title: 'Mùa thu này mặc màu gì?',
     excerpt: 'Chocolate, burgundy và những sắc trung tính mới của mùa.',
-    image: null,
+    image: '/images/stories/mua-thu-nay-mac-mau-gi.jpg',
   },
   {
     slug: 'chocolate-brown',
@@ -17,6 +17,6 @@ export const stories: Story[] = [
     slug: 'so-mi-trang-phoi-the-nao',
     title: 'Một chiếc sơ mi trắng có thể phối như thế nào?',
     excerpt: 'Bốn cách mặc cùng một chiếc áo cho bốn hoàn cảnh khác nhau.',
-    image: null,
+    image: '/images/stories/so-mi-trang-phoi-the-nao.jpg',
   },
 ]

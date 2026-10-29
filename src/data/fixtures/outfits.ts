@@ -26,7 +26,7 @@ export const outfits: Outfit[] = [
     name: 'Soft Feminine cuối tuần',
     whyItWorks:
       'Áo lụa rủ xuống gặp chân váy midi tạo một đường dọc liền mạch; sắc burgundy ấm giữ outfit khỏi nhạt. Cardigan khoác hở bên ngoài thêm một lớp mà không thêm cấu trúc, giữ outfit đúng tinh thần mềm của soft-feminine.',
-    image: null,
+    image: '/images/outfits/soft-feminine-cuoi-tuan.jpg',
     itemSlugs: ['ao-lua', 'chan-vay-midi', 'ballet-flat', 'ao-cardigan'],
     styleSlugs: ['soft-feminine'],
     occasions: ['casual', 'date'],
@@ -36,7 +36,7 @@ export const outfits: Outfit[] = [
     name: 'Áo lụa quần âu buổi tối',
     whyItWorks:
       'Áo lụa buông ngoài quần âu giữ đúng tinh thần quiet luxury: một lớp mềm đặt cạnh một lớp có đường ly thẳng để outfit không ngả hẳn về phía nào. Loafer và túi có kết cấu cùng tông chocolate hoặc đen lặp lại màu của quần, nên set chỉ xoay quanh hai, ba sắc ấm tối mà vẫn đủ chỉn chu cho buổi tối hoặc hẹn hò.',
-    image: null,
+    image: '/images/outfits/ao-lua-quan-au-buoi-toi.jpg',
     itemSlugs: ['ao-lua', 'quan-au', 'loafer', 'tui-co-ket-cau'],
     styleSlugs: ['quiet-luxury'],
     occasions: ['event', 'date'],
@@ -56,7 +56,7 @@ export const outfits: Outfit[] = [
     name: 'Minimalist dệt kim quần âu',
     whyItWorks:
       'Áo dệt kim mỏng ôm nhẹ làm lớp trong gọn dưới blazer, quần âu giữ đường ly thẳng nên cả set không cần thêm chi tiết nào khác ngoài túi có kết cấu để khép lại tỷ lệ. Bốn món, bốn vai trò rõ, không món nào lặp việc của món khác — đúng tinh thần minimalist, và màu kem, be-xám, đen giữ tổng thể yên tĩnh.',
-    image: null,
+    image: '/images/outfits/minimalist-det-kim-quan-au.jpg',
     itemSlugs: ['ao-det-kim-mong', 'quan-au', 'blazer', 'tui-co-ket-cau'],
     styleSlugs: ['minimalist'],
     occasions: ['work'],
@@ -66,7 +66,7 @@ export const outfits: Outfit[] = [
     name: 'Casual Chic khoác trench',
     whyItWorks:
       'Trench coat khoác ngoài áo dệt kim mỏng và quần wide-leg chocolate thêm một lớp có cấu trúc cho một set vốn toàn vải mềm và ống rộng, đủ để chuyển outfit từ ở nhà sang ra ngoài mà không đổi món bên trong. Ballet flat giữ phần chân nhẹ, be-xám của trench và chocolate của quần là hai tông ấm gần nhau, không tạo tương phản mạnh.',
-    image: null,
+    image: '/images/outfits/casual-chic-trench.jpg',
     itemSlugs: ['ao-det-kim-mong', 'quan-wide-leg-chocolate', 'trench-coat', 'ballet-flat'],
     styleSlugs: ['casual-chic'],
     occasions: ['casual', 'school'],
@@ -76,7 +76,7 @@ export const outfits: Outfit[] = [
     name: 'Shirt dress blazer đi làm',
     whyItWorks:
       'Shirt dress dáng relaxed cần một lớp cấu trúc để đủ chỉn chu cho công sở, và blazer khoác ngoài bù lại đúng phần eo không chiết sâu của váy. Loafer và túi có kết cấu cùng tông chocolate hoặc đen khép lại set bằng hai điểm cứng ở hai đầu cơ thể, đủ gọn cho cả công sở và một sự kiện buổi tối.',
-    image: null,
+    image: '/images/outfits/shirt-dress-blazer-di-lam.jpg',
     itemSlugs: ['shirt-dress', 'blazer', 'loafer', 'tui-co-ket-cau'],
     styleSlugs: ['modern-classic'],
     occasions: ['work', 'event'],
@@ -86,7 +86,7 @@ export const outfits: Outfit[] = [
     name: 'Slip dress trench buổi tối',
     whyItWorks:
       'Slip dress là món ít cấu trúc nhất trong outfit này, nên trench coat khoác buông không cài cúc là lớp ngoài cân lại vừa đủ, không cứng như blazer để không xung đột với đường cắt chéo của váy. Ballet flat giữ outfit nhẹ ở chân, và burgundy hoặc đen của slip dress đứng dưới be-xám hoặc kem của trench vẫn giữ được độ sang cho buổi tối.',
-    image: null,
+    image: '/images/outfits/slip-dress-trench-buoi-toi.jpg',
     itemSlugs: ['slip-dress', 'trench-coat', 'ballet-flat'],
     styleSlugs: ['quiet-luxury'],
     occasions: ['date', 'event'],
@@ -96,7 +96,7 @@ export const outfits: Outfit[] = [
     name: 'A-line dress cardigan',
     whyItWorks:
       'A-line dress xòe nhẹ từ eo xuống gấu đã đủ mềm, nên cardigan khoác hở chỉ thêm một lớp ấm mà không thêm cấu trúc nào, giữ outfit đúng hướng soft-feminine. Túi có kết cấu là điểm cứng duy nhất của set, cân lại cả hai món đều rủ mềm, còn ballet flat giữ phần chân nhẹ và dễ di chuyển cho cả ngày đi học hoặc cuối tuần.',
-    image: null,
+    image: '/images/outfits/a-line-dress-cardigan.jpg',
     itemSlugs: ['a-line-dress', 'ao-cardigan', 'ballet-flat', 'tui-co-ket-cau'],
     styleSlugs: ['soft-feminine'],
     occasions: ['casual', 'school'],
