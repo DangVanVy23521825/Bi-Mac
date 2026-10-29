@@ -17,6 +17,22 @@
   --font-body: var(--font-body-src), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Cormorant Garamond ở 400 quá mảnh để làm tiêu đề — các dòng title chìm
+   xuống ngang trọng lượng body. Đặt 600 (trọng lượng đã nạp trong
+   layout.tsx) một lần ở layer base, thay vì rải `font-semibold` lên từng
+   heading. Utilities vẫn thắng layer này, nên chỗ nào thật sự cần nhẹ thì
+   cứ đặt `font-normal` tại chỗ đó.
+   `legend` nằm cùng nhóm: các câu hỏi trong Questionnaire là title về mặt
+   thị giác, chỉ khác thẻ. */
+@layer base {
+  h1,
+  h2,
+  h3,
+  legend {
+    font-weight: 600;
+  }
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);

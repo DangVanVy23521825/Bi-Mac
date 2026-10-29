@@ -11,7 +11,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-muted/40 bg-background/95 backdrop-blur-none">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="font-display text-2xl tracking-tight">
+        <Link href="/" className="font-display text-2xl font-semibold tracking-tight">
           Bí Mặc
         </Link>
 
