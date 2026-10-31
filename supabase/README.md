@@ -107,8 +107,16 @@ Rồi kiểm bằng mắt trên dashboard bốn thứ — test không thấy đ�
 - **Authentication → Providers / URL Configuration** → Google đang Enabled, và
   `http://localhost:3000/auth/callback` có trong Redirect URLs.
 
-## Chưa có ở đây
+## `0002_ai_usage.sql` — hạn mức gọi model theo người dùng
 
-`ai_usage` (hạn mức gọi model theo người dùng) nằm ở một migration sau —
-`0002_*`, thuộc Task 6. Đừng thêm nó vào `0001`: file này có thể đã được áp
-lên project thật và migration đã áp thì không sửa, chỉ thêm file mới.
+Bảng riêng, migration riêng (Task 6) — không nằm trong `0001` vì lý do đã nói
+ở trên: `0001` có thể đã được áp lên project thật, và migration đã áp thì
+không sửa, chỉ thêm file mới.
+
+`ai_usage(user_id, day, count)` cùng khuôn bảo đảm với năm bảng ở `0001`: bật
+RLS, `revoke all` trước khi `grant` lại đúng ba quyền cần (`select`,
+`insert`, `update` — không có `delete`, vì không tính năng nào xoá hàng hạn
+mức), và một `do $$ … $$` tự khẳng định lúc áp rằng `anon`/`authenticated`
+không còn `TRUNCATE`/`REFERENCES`/`TRIGGER`/`DELETE`. Khoá chính tổ hợp
+`(user_id, day)` vừa là ràng buộc unique mà spec đòi, vừa là đích cho
+`upsert(..., { onConflict: 'user_id,day' })` ở `src/features/closet/quota.ts`.
