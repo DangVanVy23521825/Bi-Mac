@@ -30,9 +30,16 @@ nào nó đọc được; client ID/secret của Google thì không đi qua máy
 Có Supabase CLI:
 
 ```bash
+supabase init                        # chỉ lần đầu — xem ghi chú bên dưới
 supabase link --project-ref <ref>
 supabase db push
 ```
+
+Repo này **cố ý** chỉ commit `supabase/migrations/` chứ không commit
+`supabase/config.toml` (file đó mang cấu hình của stack local, không phải của
+schema). Mà `supabase link`/`supabase db push` thì đòi có `config.toml`, nên
+bỏ `supabase init` ra là `link` sẽ dừng ngay. `supabase init` chỉ tạo thêm
+`config.toml` bên cạnh `migrations/`, không ghi đè gì trong đó.
 
 Không có CLI: mở SQL editor trên dashboard, dán toàn bộ
 `migrations/0001_account_and_closet.sql`, bấm Run. Migration viết để chạy một
@@ -84,7 +91,21 @@ pnpm vitest run src/lib/supabase/rls.integration.test.ts
 ```
 
 Báo `skipped` nghĩa là shell chưa có đủ ba biến — không phải test đã đậu. Test
-dọn sau khi chạy: xoá hai user vừa tạo và xoá file đã upload.
+dọn sau khi chạy: xoá file đã upload rồi xoá hai user vừa tạo (dọn từng user
+độc lập, nên một lần setup gãy nửa đường không để lại user rác).
+
+Rồi kiểm bằng mắt trên dashboard bốn thứ — test không thấy được chúng:
+
+- **Storage → Buckets** → `closet` phải là **Private**. Nếu là Public thì dừng
+  lại: ảnh quần áo của người dùng đang công khai.
+- **Storage → Policies** → `storage.objects` phải hiện **RLS enabled**, và có
+  bốn policy `closet_objects_*`. RLS tắt ở bảng này thì bốn policy đó vô hiệu
+  và mọi người dùng đã đăng nhập đọc được ảnh của nhau — migration có một
+  `do $$ … $$` khẳng định việc này lúc áp, nhưng nó không bắt được việc ai đó
+  tắt RLS *sau* khi migration chạy.
+- **Database → Policies** → cả năm bảng hiện **RLS enabled**, mỗi bảng 4 policy.
+- **Authentication → Providers / URL Configuration** → Google đang Enabled, và
+  `http://localhost:3000/auth/callback` có trong Redirect URLs.
 
 ## Chưa có ở đây
 

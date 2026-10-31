@@ -140,12 +140,37 @@ describe.skipIf(!hasServiceRoleEnv())('RLS trên project Supabase thật', () =>
   }, SETUP_TIMEOUT_MS)
 
   afterAll(async () => {
-    // `on delete cascade` dọn năm bảng, nhưng KHÔNG chạm storage (bucket là
-    // hệ thống riêng — đúng cái bẫy spec §6.8 mô tả), nên file phải xoá tay.
-    if (admin && userA && userB) {
-      await admin.storage.from(BUCKET).remove([pathOfB(), `${userA.id}/ao-cua-a.png`])
-      await admin.auth.admin.deleteUser(userA.id)
-      await admin.auth.admin.deleteUser(userB.id)
+    if (!admin) return
+
+    // Dọn từng user độc lập, không gộp điều kiện. Nếu `beforeAll` tạo được A
+    // rồi gãy ở B (rate limit, mạng chớp), một guard dạng `userA && userB` sẽ
+    // bỏ qua toàn bộ cleanup và để A nằm lại **vĩnh viễn** trong một project
+    // thật — mỗi lần chạy lỗi lại thêm một user rác.
+    //
+    // Và mỗi bước bọc try/catch riêng: lỗi dọn bucket không được chặn việc
+    // xoá user, vì xoá user mới là thứ `on delete cascade` dọn năm bảng.
+    const created: Array<TestUser | undefined> = [userA, userB]
+
+    for (const user of created) {
+      if (!user) continue
+
+      // Liệt kê rồi xoá, thay vì xoá theo đường dẫn đoán trước: dọn luôn mọi
+      // file test đã tạo, kể cả file của một bước setup gãy nửa đường.
+      // `on delete cascade` KHÔNG chạm storage (bucket là hệ thống riêng —
+      // đúng cái bẫy spec §6.8 mô tả), nên bước này phải làm tay.
+      try {
+        const listed = await admin.storage.from(BUCKET).list(user.id)
+        const paths = (listed.data ?? []).map((file) => `${user.id}/${file.name}`)
+        if (paths.length > 0) await admin.storage.from(BUCKET).remove(paths)
+      } catch {
+        // Dọn được tới đâu hay tới đó — không để lỗi ở đây che mất kết quả test.
+      }
+
+      try {
+        await admin.auth.admin.deleteUser(user.id)
+      } catch {
+        // Như trên.
+      }
     }
   }, SETUP_TIMEOUT_MS)
 

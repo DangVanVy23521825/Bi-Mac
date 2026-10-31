@@ -236,32 +236,79 @@ create table public.saved_styles (
 -- Quyền ở mức bảng
 -- ────────────────────────────────────────────────────────────────────────────
 --
--- Supabase cấp quyền mặc định cho `anon`/`authenticated` trên bảng mới trong
--- `public`. Ở đây nói thẳng ra thay vì dựa vào mặc định đó:
+-- Supabase cấp sẵn `all privileges` trên mọi bảng mới trong `public` cho
+-- `anon`, `authenticated` và `service_role` (qua default privileges). `all`
+-- ở đây gồm cả **TRUNCATE**, `REFERENCES` và `TRIGGER`.
 --
---  * `anon` (khách chưa đăng nhập) bị thu hồi sạch. Năm bảng này không có gì
---    công khai, và trang công khai (`/`, `/wardrobe/*`, `/styles/*`) đọc
---    fixtures chứ không đọc database. Thu hồi ở mức bảng là tấm chắn thứ hai:
---    nếu sau này ai đó thêm một policy lỏng cho `public`, `anon` vẫn không
---    chạm được.
---  * `authenticated` được cả bốn thao tác, và RLS bên dưới mới là thứ quyết
---    định *hàng nào*. Đúng bốn thao tác này khớp bốn policy mỗi bảng — không
---    tạo policy cho một thao tác mà role không có quyền, vì một policy không
---    bao giờ được đánh giá chỉ làm người đọc tin sai về vùng bảo vệ.
---  * `service_role` giữ nguyên quyền mặc định của Supabase và vốn bỏ qua RLS;
---    nó chỉ được dùng ở server cho việc xoá tài khoản (Task 13).
+-- `TRUNCATE` là chỗ chết người: **PostgreSQL không áp RLS cho TRUNCATE**. Nó
+-- chỉ bị chặn bởi quyền ở mức bảng. Nghĩa là nếu `authenticated` còn giữ
+-- `TRUNCATE`, bất kỳ người dùng nào đã đăng nhập cũng xoá sạch được
+-- `closet_items` của **toàn bộ** người dùng khác, và hai mươi policy bên dưới
+-- không chặn được một dòng nào của việc đó.
+--
+-- Vì vậy phải `revoke all` **trước**, rồi mới `grant` lại đúng phần cần. Chỉ
+-- `grant` thêm thì không thu hồi được gì: quyền là cộng dồn, không phải thay
+-- thế. Đây là lỗi đã từng có mặt trong chính file này.
+--
+--  * `anon` (khách chưa đăng nhập) không còn quyền nào. Năm bảng này không có
+--    gì công khai, và trang công khai (`/`, `/wardrobe/*`, `/styles/*`) đọc
+--    fixtures chứ không đọc database.
+--  * `authenticated` chỉ còn đúng bốn thao tác, và RLS mới là thứ quyết định
+--    *hàng nào*. Bốn thao tác này khớp bốn policy mỗi bảng — không tạo policy
+--    cho một thao tác mà role không có quyền, vì một policy không bao giờ
+--    được đánh giá chỉ làm người đọc tin sai về vùng bảo vệ.
+--  * `public` (pseudo-role mà mọi role đều kế thừa) cũng bị thu hồi, để không
+--    còn đường vòng nào.
+--  * `service_role` giữ nguyên quyền mặc định và vốn bỏ qua RLS; nó chỉ được
+--    dùng ở server cho việc xoá tài khoản (Task 13).
 
-revoke all on table public.profiles from anon;
-revoke all on table public.closet_items from anon;
-revoke all on table public.saved_items from anon;
-revoke all on table public.saved_outfits from anon;
-revoke all on table public.saved_styles from anon;
+revoke all on table
+  public.profiles,
+  public.closet_items,
+  public.saved_items,
+  public.saved_outfits,
+  public.saved_styles
+from public, anon, authenticated;
 
 grant select, insert, update, delete on table public.profiles to authenticated;
 grant select, insert, update, delete on table public.closet_items to authenticated;
 grant select, insert, update, delete on table public.saved_items to authenticated;
 grant select, insert, update, delete on table public.saved_outfits to authenticated;
 grant select, insert, update, delete on table public.saved_styles to authenticated;
+
+-- Khẳng định lại kết quả thay vì tin rằng mình vừa viết đúng. `TRUNCATE`
+-- không thể kiểm được từ test tích hợp (supabase-js không có đường chạy SQL
+-- thô, và PostgREST không phơi `information_schema`), nên chỗ duy nhất kiểm
+-- được là ngay đây, lúc áp migration. Sai thì migration dừng, không âm thầm
+-- để lại một bảng ai cũng truncate được.
+do $$
+declare
+  tbl text;
+  rol text;
+  priv text;
+begin
+  foreach tbl in array array[
+    'profiles', 'closet_items', 'saved_items', 'saved_outfits', 'saved_styles'
+  ] loop
+    foreach rol in array array['anon', 'authenticated'] loop
+      foreach priv in array array['TRUNCATE', 'REFERENCES', 'TRIGGER'] loop
+        if has_table_privilege(rol::name, format('public.%I', tbl), priv) then
+          raise exception
+            'Role % vẫn còn quyền % trên public.% — RLS không áp cho TRUNCATE, phải revoke trước khi grant',
+            rol, priv, tbl;
+        end if;
+      end loop;
+    end loop;
+
+    if has_table_privilege('anon'::name, format('public.%I', tbl), 'SELECT') then
+      raise exception 'Role anon vẫn đọc được public.% — bảng này không có gì công khai', tbl;
+    end if;
+
+    if not has_table_privilege('authenticated'::name, format('public.%I', tbl), 'SELECT') then
+      raise exception 'Role authenticated mất quyền SELECT trên public.% — app sẽ không đọc được gì', tbl;
+    end if;
+  end loop;
+end $$;
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- RLS
@@ -406,6 +453,25 @@ set
   public = false,
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
+
+-- Bốn policy dưới đây chỉ có nghĩa nếu `storage.objects` **đang bật** RLS.
+-- Bảng đó không thuộc migration này (Supabase bật sẵn), nên ở đây không
+-- `alter table` — lệnh đó cần `supabase_storage_admin` và có thể không chạy
+-- được. Nhưng đọc trạng thái thì không cần quyền gì, và nếu RLS đang tắt
+-- (ai đó tắt đi để debug, hoặc mặc định của Supabase đổi) thì bốn policy
+-- thành vật trang trí: cờ `public = false` vẫn chặn URL công khai, nhưng
+-- **mọi người dùng đã đăng nhập đọc và ghi được mọi object trong `closet`**.
+-- Đúng cái bẫy đoạn đầu file cảnh báo, chỉ là ở một bảng mình không sở hữu.
+-- Thà migration dừng ở đây còn hơn báo thành công rồi để ảnh mở toang.
+do $$
+begin
+  if not (
+    select relrowsecurity from pg_class where oid = 'storage.objects'::regclass
+  ) then
+    raise exception
+      'RLS đang tắt trên storage.objects — bốn policy của bucket closet sẽ không có tác dụng. Bật lại (Storage → Policies) rồi chạy lại migration.';
+  end if;
+end $$;
 
 -- Đường dẫn ảnh là `<user_id>/<file>`, và `storage.foldername(name)` trả về
 -- mảng các segment thư mục, nên `[1]` là segment đầu. So khớp nó với

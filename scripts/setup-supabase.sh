@@ -311,8 +311,12 @@ pause "Đã lưu URL configuration?"
 stage "Áp migration: bảng, RLS và bucket private"
 say "Migration tạo năm bảng, bật RLS, và tạo bucket private 'closet'."
 if command -v supabase >/dev/null 2>&1; then
-  note "Có Supabase CLI: cách gọn nhất là"
-  note "  supabase link --project-ref ${PROJECT_REF} && supabase db push"
+  note "Có Supabase CLI. Repo không commit supabase/config.toml, nên cần init"
+  note "trước, không thì 'link' dừng ngay:"
+  note "  supabase init     # chỉ lần đầu, không ghi đè migrations/"
+  note "  supabase link --project-ref ${PROJECT_REF}"
+  note "  supabase db push"
+  note "Hoặc bỏ qua CLI và dán tay theo hai bước dưới đây — cách nào cũng được."
 else
   note "Chưa có Supabase CLI — dùng SQL editor trên dashboard là đủ."
 fi
