@@ -6,77 +6,18 @@
 // (ADR-021: gate của layout chỉ là ranh giới UI, không phải ranh giới dữ
 // liệu, vì Next bake luôn RSC payload của nhánh bị ẩn vào segment cache).
 //
-// Ba Server Action (`createItemAction`/`updateItemAction`/`deleteItemAction`)
-// định nghĩa ngay trong file này — không qua một route API riêng — vì chưa
-// có route nào cho CRUD tủ đồ (Task 6 chỉ thêm `/api/closet/tag`), và đây
-// là cách Next.js App Router làm CRUD từ Server Component mà không cần tự
-// dựng một route handler mới. Mỗi action tự gọi lại `requireUserId()`
-// chứ không dùng `userId` đóng từ closure của hàm trang — cùng triết lý
-// "phòng thủ theo lớp" mà `repository.ts` áp cho `.eq('user_id', …)` trên
-// mọi câu truy vấn.
-import { revalidatePath } from 'next/cache'
-
+// Ba Server Action (thêm/sửa/xoá) sống ở `./actions.ts`, không phải
+// closure lồng ngay trong file này — xem comment đầu file đó để biết vì
+// sao (ngắn gọn: test được bằng Vitest mà không phải render cả trang).
 import { AddItemForm } from '@/components/closet/AddItemForm'
 import { ClosetItemCard } from '@/components/closet/ClosetItemCard'
 import { EmptyCloset } from '@/components/closet/EmptyCloset'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { requireUserId } from '@/features/account/guard'
 import { signClosetImage } from '@/features/closet/images'
-import { closetItemDraftSchema } from '@/features/closet/schema'
-import { createClosetItem, deleteClosetItem, listClosetItems, updateClosetItem } from '@/features/closet/repository'
+import { listClosetItems } from '@/features/closet/repository'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import type { ClosetItemDraft } from '@/types/closet'
-
-const PATH = '/closet/items'
-
-type ActionResult = { ok: true } | { ok: false; error: string }
-
-const CONFIG_ERROR = 'Tính năng này cần Supabase được cấu hình, hiện chưa có.'
-
-async function createItemAction(draft: ClosetItemDraft): Promise<ActionResult> {
-  'use server'
-  const userId = await requireUserId()
-
-  const parsed = closetItemDraftSchema.safeParse(draft)
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Thông tin chưa hợp lệ.' }
-  }
-
-  const supabase = await createSupabaseServerClient()
-  if (!supabase) return { ok: false, error: CONFIG_ERROR }
-
-  await createClosetItem(supabase, userId, parsed.data)
-  revalidatePath(PATH)
-  return { ok: true }
-}
-
-async function updateItemAction(id: string, patch: Partial<ClosetItemDraft>): Promise<ActionResult> {
-  'use server'
-  const userId = await requireUserId()
-
-  const supabase = await createSupabaseServerClient()
-  if (!supabase) return { ok: false, error: CONFIG_ERROR }
-
-  const updated = await updateClosetItem(supabase, userId, id, patch)
-  if (!updated) return { ok: false, error: 'Không thể lưu thay đổi cho món đồ này. Vui lòng thử lại.' }
-
-  revalidatePath(PATH)
-  return { ok: true }
-}
-
-async function deleteItemAction(id: string): Promise<ActionResult> {
-  'use server'
-  const userId = await requireUserId()
-
-  const supabase = await createSupabaseServerClient()
-  if (!supabase) return { ok: false, error: CONFIG_ERROR }
-
-  const deleted = await deleteClosetItem(supabase, userId, id)
-  if (!deleted) return { ok: false, error: 'Không thể xoá món đồ này. Vui lòng thử lại.' }
-
-  revalidatePath(PATH)
-  return { ok: true }
-}
+import { createItemAction, deleteItemAction, updateItemAction } from './actions'
 
 export default async function ClosetItemsPage() {
   const userId = await requireUserId()

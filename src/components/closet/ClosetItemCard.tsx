@@ -6,14 +6,20 @@
 // hình quản lý dễ trôi về hướng dashboard nhất, nên mượn lại nhịp điệu
 // biên tập đã có sẵn trong app thay vì bày thêm một mẫu card mới.
 //
-// Hai hành động — sửa nhãn (dùng lại `ClosetLabelFields` của
-// `AddItemForm`, cùng một bộ control với lúc thêm mới) và xoá. Xoá luôn
-// đi qua một bước xác nhận dựng ngay trong hàng (quyết định #6 — không
-// dùng `window.confirm`).
+// Hai hành động — sửa nhãn (dùng lại `ClosetLabelFields`, cùng một bộ
+// control với lúc thêm mới) và xoá. Xoá luôn đi qua một bước xác nhận
+// dựng ngay trong hàng (quyết định #6 — không dùng `window.confirm`).
+//
+// `onUpdate` nhận nguyên một `ClosetItemDraft` đầy đủ, không phải
+// `Partial` — `draft` ở component này luôn là bản đầy đủ (khởi tạo từ
+// `toDraft(item)` rồi chỉnh dần), nên kiểu tham số phản ánh đúng thứ thực
+// sự được gửi đi, và phía nhận (`updateItemAction`) có thể chạy
+// `closetItemDraftSchema` — đúng cổng validate mà `createItemAction` cũng
+// dùng — mà không phải lo một patch thật-sự-partial thiếu field bắt buộc.
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ClosetLabelFields } from './AddItemForm'
+import { ClosetLabelFields } from './ClosetLabelFields'
 import { allCategories } from '@/data'
 import type { ClosetItem, ClosetItemDraft } from '@/types/closet'
 
@@ -23,7 +29,7 @@ type Props = {
   item: ClosetItem
   imageUrl: string | null
   index: number
-  onUpdate: (id: string, patch: Partial<ClosetItemDraft>) => Promise<ActionResult>
+  onUpdate: (id: string, draft: ClosetItemDraft) => Promise<ActionResult>
   onDelete: (id: string) => Promise<ActionResult>
 }
 
@@ -96,8 +102,11 @@ export function ClosetItemCard({ item, imageUrl, index, onUpdate, onDelete }: Pr
     setPending(false)
 
     if (!result.ok) {
+      // Giữ nguyên `confirmingDelete = true` — thông báo lỗi render ngay
+      // trong khối xác nhận này (bên dưới); đóng khối lại ở đây sẽ làm lỗi
+      // không bao giờ lên màn hình, coi như xoá thất bại mà im lặng quay
+      // về hàng bình thường.
       setError(result.error)
-      setConfirmingDelete(false)
       return
     }
     router.refresh()
