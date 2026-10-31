@@ -64,3 +64,62 @@ describe(MIGRATION_PATH, () => {
     }
   })
 })
+
+// `0002_ai_usage.sql` (Task 6) mang đúng loại rủi ro mà file test này tồn
+// tại để bắt — `revoke`/`grant` cộng dồn không phải thay thế, và không có
+// đường nào kiểm TRUNCATE/EXECUTE từ `rls.integration.test.ts` (PostgREST
+// không phơi `information_schema`/`pg_catalog`). Khối `do $$ … $$` tự
+// khẳng định trong file đó chỉ chạy một lần, lúc ai đó áp migration lên một
+// project thật — không chạy lại trong CI. Một guard riêng ở đây, tách
+// khỏi `describe` của `0001` phía trên vì hình dạng khác (một bảng, không
+// có storage.objects, có thêm một hàm `increment_ai_usage` với quyền
+// EXECUTE của chính nó cần soi riêng), là lớp CI-enforced thứ hai cho đúng
+// các bất biến đó.
+const MIGRATION_PATH_0002 = 'supabase/migrations/0002_ai_usage.sql'
+const sql0002 = readFileSync(MIGRATION_PATH_0002, 'utf8')
+
+describe(MIGRATION_PATH_0002, () => {
+  it('thu hồi sạch quyền của ai_usage trước khi grant lại', () => {
+    const revokeAt = sql0002.indexOf('revoke all on table')
+    const grantAt = sql0002.indexOf('to authenticated;')
+
+    expect(revokeAt).toBeGreaterThan(-1)
+    expect(grantAt).toBeGreaterThan(-1)
+    expect(revokeAt).toBeLessThan(grantAt)
+
+    const revokeStatement = sql0002.slice(revokeAt, sql0002.indexOf(';', revokeAt))
+    expect(revokeStatement).toContain('public.ai_usage')
+    for (const role of ['public', 'anon', 'authenticated']) {
+      expect(revokeStatement).toContain(role)
+    }
+  })
+
+  it('tự khẳng định anon/authenticated không còn TRUNCATE/REFERENCES/TRIGGER/DELETE trên ai_usage lúc áp migration', () => {
+    expect(sql0002).toContain('has_table_privilege')
+    for (const priv of ['TRUNCATE', 'REFERENCES', 'TRIGGER', 'DELETE']) {
+      expect(sql0002).toContain(`'${priv}'`)
+    }
+  })
+
+  it('bật RLS trên ai_usage', () => {
+    expect(sql0002).toContain('alter table public.ai_usage enable row level security;')
+  })
+
+  it('thu hồi EXECUTE của increment_ai_usage từ public trước khi grant lại cho authenticated', () => {
+    const revokeAt = sql0002.indexOf('revoke all on function')
+    const grantAt = sql0002.indexOf('grant execute on function')
+
+    expect(revokeAt).toBeGreaterThan(-1)
+    expect(grantAt).toBeGreaterThan(-1)
+    expect(revokeAt).toBeLessThan(grantAt)
+    expect(sql0002.slice(revokeAt, sql0002.indexOf(';', revokeAt))).toContain(
+      'public.increment_ai_usage',
+    )
+  })
+
+  it('tự khẳng định anon không gọi được increment_ai_usage, authenticated vẫn gọi được, lúc áp migration', () => {
+    expect(sql0002).toContain('has_function_privilege')
+    expect(sql0002).toContain("'public.increment_ai_usage(uuid, date)'")
+    expect(sql0002).toContain("'EXECUTE'")
+  })
+})
