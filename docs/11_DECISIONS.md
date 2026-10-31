@@ -78,7 +78,7 @@ Record durable decisions here. Keep entries concise.
 
 ## ADR-008 — Defer `(public)`/`(account)` route groups
 
-**Status:** Accepted
+**Status:** Accepted — superseded by ADR-021 now that a real auth-driven boundary exists.
 
 **Decision:** Do not introduce the `(public)`/`(account)` route groups described in earlier architecture docs for v1.
 
@@ -209,6 +209,32 @@ Record durable decisions here. Keep entries concise.
 **Reason:** ADR-019 sized the text-only budget off a warm ~8-9s measurement, which left no headroom for a cold start. Re-measured on 2026-10-26 against the real key: three raw `generateContent` calls took 9.7s, 9.8s and 10.4s, and four warm end-to-end requests through the route — two Gemini calls each — returned `providerId: 'gemini'` without degrading, in 13.5s, 19.9s, 20.5s and 20.7s. The failure was isolated to the *first* request after the server booted, which degraded at 13.3s: module init plus route compilation land on top of the same ~10s model call, and 12s cannot absorb both. That matters more than a warm-path number, because on a serverless platform every cold instance repeats that first request — so the submission most likely to be a real visitor's first impression was the one most likely to show the fallback banner on a perfectly working key, model and network. 25s is roughly 2.5x the warm per-call observation. The worst case is now analyze 25s + explain 25s = 50s (55s on the photo path), well inside the platform's 300s function limit, and the staged NDJSON response means the user still sees the style/palette direction as soon as stage 1 lands rather than waiting on the whole budget.
 
 **Rejected:** dropping the budget entirely and letting the provider call run unbounded — the deterministic fallback exists precisely so a stuck call degrades into a usable answer instead of an open connection, and removing the ceiling would trade a rare wrong fallback for an occasional hang with no answer at all.
+
+---
+
+## ADR-021 — Route boundary: `(account)` route group + `proxy.ts`, splitting pages from the API
+
+**Status:** Accepted
+
+**Decision:** The route boundary ADR-008 deferred is now in place, split by what each tree needs:
+
+- Pages under `/closet` move into `src/app/(account)/` (so far just `(account)/closet/page.tsx`). `src/app/(account)/layout.tsx` calls `getAuthState()` once and either renders `children` (signed-in) or a generic "chưa cấu hình" / "đăng nhập" message in its place (unconfigured / signed-out) — never a redirect. Every future page this product adds under `/closet` (`/closet/items`, `/closet/looks`, `/closet/styles` per docs/02) belongs inside this group to inherit the gate.
+- `/api/closet/*` (no route exists yet; Task 6 adds the first one) is gated by `src/proxy.ts`, which calls `getAuthState()` and returns a 401 JSON response before any route handler runs when the caller isn't signed in.
+
+Two mechanisms, not one, because neither covers both trees: a route-group layout can render a React tree but cannot produce a bare 401 for an API consumer; `proxy.ts` can reject or pass through but cannot render a component tree, so it cannot show the inline "chưa cấu hình" state the product requires for public-facing pages.
+
+**Reason:** A task review on the branch that introduced `getAuthState()`/`requireUserId()` (`src/features/account/guard.ts`) found that nothing actually called either function — `src/app/closet/page.tsx` rendered unconditionally to every visitor regardless of auth state, which is exactly the "scattered, can be forgotten" risk ADR-008 anticipated reversing once a real boundary existed. Fixing the one page that happened to exist would not have fixed the shape of the problem; a structural mechanism does, because a future page added under the wrong parent is a visible, one-line routing mistake instead of a silent missing function call.
+
+`proxy.ts` (not the deprecated `middleware.ts` name) calling `getAuthState()` was verified empirically before committing to it, not assumed from memory: a throwaway proxy calling `cookies()` from `next/headers` was run against a real `next dev` and `next start` server on this project's Next.js version (16.3.8) and returned 200 with no "outside a request scope" error. Older guidance that `next/headers` doesn't work in Middleware does not hold on this version.
+
+A verified, not hypothetical, consequence worth recording: because `getAuthState()` resolves to a build-time constant (`unconfigured`) when no Supabase env is set, Next statically prerenders the whole `/closet` route, and its static-segment cache bakes the *hidden* page's rendered output into the shipped RSC flight payload (inside a `<script>` tag, invisible in the rendered DOM, but present in "view source") even though `AccountLayout` never includes `children` in what it returns. Confirmed on both `next dev` and `next start`. This is harmless today because nothing reachable while signed-out or unconfigured can contain per-user data (there is no authenticated user to fetch it for), but it means **a parent layout choosing not to render `children` is a UI-level gate, not an execution or data-isolation boundary** — a future page under `(account)` that fetches real personal data must still gate itself (e.g. via `requireUserId()`) before doing that fetch, exactly as its own brief (Task 6) already requires for the API side. Do not treat the layout gate as sufficient on its own once real data is involved.
+
+**Rejected:**
+- Fixing only the specific `/closet/page.tsx` instance without a structural mechanism — addresses the symptom the review found, not the "scattered, forgettable" shape it was flagging.
+- A single `middleware.ts`/`proxy.ts` covering both pages and the API — rejected because Middleware/Proxy cannot render a React component tree, so it cannot produce the inline "chưa cấu hình"/"đăng nhập" UI the product requires instead of a redirect for the page tree.
+- Hard-redirecting `/closet` to `/` for a signed-out visitor (what `requireUserId()` does) — rejected for the page tree specifically: a visitor discovering "Tủ đồ của tôi" from the main nav should see what it is and a way in, not get bounced with no explanation. `requireUserId()`'s redirect remains the right tool for an *action* that needs a user (saving an item, etc.), just not for a page a signed-out visitor is allowed to land on.
+
+**Consequences:** Any task that adds a page under `/closet` must put it inside `src/app/(account)/` to inherit the gate (the URL is unaffected — route groups don't appear in the path). Any task that adds a route under `/api/closet/` is already covered by `proxy.ts`'s matcher without needing to add its own 401 check for the "not signed in at all" case, though Task 6's own brief already plans a check at the route level too — that redundancy is intentional defense-in-depth, not duplicated work to remove.
 
 ---
 
