@@ -1,9 +1,26 @@
 import { StylistFlow } from '@/components/stylist/StylistFlow'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { getAvoidOptions } from '@/data'
+import { loadPreferences } from '@/features/account/preferences'
+import { getCurrentUserId } from '@/lib/supabase/session'
 
 export default async function StylistPage() {
   const avoidOptions = await getAvoidOptions()
+
+  // Task 12: prefill only for a signed-in visitor — no session, or
+  // Supabase unconfigured, both resolve `userId` to `null` here
+  // (`getCurrentUserId`) and `initialAnswers` stays `undefined`, which is
+  // exactly how the form already rendered before this task existed. A
+  // thrown `auth.getUser()` (see `src/lib/supabase/session.ts`'s own
+  // comment on not guarding that itself) must not take the whole page
+  // down over a best-effort prefill, so the guard lives here.
+  let userId: string | null
+  try {
+    userId = await getCurrentUserId()
+  } catch {
+    userId = null
+  }
+  const initialAnswers = (userId ? await loadPreferences(userId) : null) ?? undefined
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
@@ -18,7 +35,7 @@ export default async function StylistPage() {
       </p>
 
       <div className="mt-16">
-        <StylistFlow avoidOptions={avoidOptions} />
+        <StylistFlow avoidOptions={avoidOptions} initialAnswers={initialAnswers} />
       </div>
     </div>
   )

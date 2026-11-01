@@ -39,6 +39,7 @@
 // Streaming works fine on Node, and Edge is deprecated on this platform.
 
 import { allColors, allItems, allOutfits, allStyles } from '@/data'
+import { savePreferences } from '@/features/account/preferences'
 import { listClosetItems } from '@/features/closet/repository'
 import { signClosetImage } from '@/features/closet/images'
 import { stylistInputSchema, type StylistInput } from '@/features/stylist/input'
@@ -187,18 +188,19 @@ const STYLIST_CLOSET_FETCH_LIMIT = 50
 // ADR-012: never log anything derived from a closet item's image — only
 // this static reason string reaches `console.error`.
 async function loadPersonalItems(): Promise<{
+  userId: string | null
   personalItems: PersonalItem[]
   closetImagePathById: Map<string, string>
 }> {
   try {
     const userId = await getCurrentUserId()
     if (!userId) {
-      return { personalItems: [], closetImagePathById: new Map() }
+      return { userId: null, personalItems: [], closetImagePathById: new Map() }
     }
 
     const supabase = await createSupabaseServerClient()
     if (!supabase) {
-      return { personalItems: [], closetImagePathById: new Map() }
+      return { userId, personalItems: [], closetImagePathById: new Map() }
     }
 
     const closetItems = await listClosetItems(supabase, userId, { limit: STYLIST_CLOSET_FETCH_LIMIT })
@@ -216,10 +218,10 @@ async function loadPersonalItems(): Promise<{
       note: item.note,
     }))
 
-    return { personalItems, closetImagePathById }
+    return { userId, personalItems, closetImagePathById }
   } catch {
     console.error('stylist-closet-read-failed')
-    return { personalItems: [], closetImagePathById: new Map() }
+    return { userId: null, personalItems: [], closetImagePathById: new Map() }
   }
 }
 
@@ -273,11 +275,21 @@ async function resolveClosetImages(
 // signed earlier — because signing belongs *after* ranking has cut the
 // caller's wardrobe down to the few entries that actually made it into
 // `outcome.closetItems` (see `resolveClosetImages`'s own doc comment).
+//
+// `userId` is only used to fire off `savePreferences` once the pipeline
+// resolves — `null` for a signed-out caller, who has nothing to save
+// preferences against. That call is deliberately *not* awaited: Task 12's
+// product rule is that remembering a questionnaire answer must never delay
+// or break the response the caller is actually waiting on, and
+// `savePreferences` (`src/features/account/preferences.ts`) already
+// swallows every failure of its own, so there is nothing useful to await
+// here anyway.
 function createStylistStream(
   input: StylistInput,
   deps: StylistDeps,
   degradedReasonOverride: DegradedReason,
   closetImagePathById: Map<string, string>,
+  userId: string | null,
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder()
 
@@ -293,6 +305,14 @@ function createStylistStream(
 
       runStylist(input, streamingDeps)
         .then(async (outcome) => {
+          if (userId) {
+            // Fire-and-forget — see the function's doc comment. A signed-in
+            // caller just completed a stylist turn with validated answers;
+            // remembering them for next time must never hold up this
+            // response or fail loudly if it doesn't land.
+            void savePreferences(userId, input.answers)
+          }
+
           const closetItems = await resolveClosetImages(outcome.closetItems, closetImagePathById)
           const resultLine = {
             type: 'result' as const,
@@ -382,7 +402,7 @@ export async function POST(request: Request): Promise<Response> {
   // `closetImagePathById` is threaded through to `createStylistStream`
   // below instead of resolved here, so image signing happens only for the
   // entries that survive ranking (see `resolveClosetImages`).
-  const { personalItems, closetImagePathById } = await loadPersonalItems()
+  const { userId, personalItems, closetImagePathById } = await loadPersonalItems()
 
   const deps: StylistDeps = {
     primary,
@@ -403,7 +423,7 @@ export async function POST(request: Request): Promise<Response> {
   // comment above.)
   const degradedReasonOverride: DegradedReason = rateLimited ? 'rate-limited' : null
 
-  const stream = createStylistStream(input, deps, degradedReasonOverride, closetImagePathById)
+  const stream = createStylistStream(input, deps, degradedReasonOverride, closetImagePathById, userId)
 
   return new Response(stream, {
     status: 200,

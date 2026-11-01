@@ -88,13 +88,27 @@ type Props = {
   avoidOptions: ItemAttribute[]
   onSubmit: (submission: QuestionnaireSubmission) => void
   pending: boolean
+  // Task 12: the signed-in caller's last questionnaire answers, already
+  // re-validated against `stylistAnswersSchema` by the server
+  // (`src/features/account/preferences.ts`) before this ever reaches the
+  // client — so `undefined` here means either no session, no saved
+  // answers, or saved answers that no longer parse. All three render the
+  // form exactly as blank as before Task 12 existed; there is nothing to
+  // distinguish and nothing partial to show.
+  initialAnswers?: StylistAnswers
 }
 
-export function Questionnaire({ avoidOptions, onSubmit, pending }: Props) {
-  const [occasions, setOccasions] = useState<Occasion[]>([])
-  const [fitPreference, setFitPreference] = useState<Fit | 'unsure'>('unsure')
-  const [avoids, setAvoids] = useState<ItemAttribute[]>([])
-  const [goal, setGoal] = useState<StylistAnswers['goal']>('style')
+export function Questionnaire({ avoidOptions, onSubmit, pending, initialAnswers }: Props) {
+  const [occasions, setOccasions] = useState<Occasion[]>(() => initialAnswers?.occasions ?? [])
+  const [fitPreference, setFitPreference] = useState<Fit | 'unsure'>(() => initialAnswers?.fitPreference ?? 'unsure')
+  // Intersected with `avoidOptions`, not used as-is: `avoidOptions` already
+  // narrows to attributes the current catalog can respect (see the fieldset
+  // below), and prefilled state must never check a box that has no visible
+  // checkbox to show it was checked.
+  const [avoids, setAvoids] = useState<ItemAttribute[]>(() =>
+    (initialAnswers?.avoids ?? []).filter((attribute) => avoidOptions.includes(attribute)),
+  )
+  const [goal, setGoal] = useState<StylistAnswers['goal']>(() => initialAnswers?.goal ?? 'style')
   const [photo, setPhoto] = useState<File | undefined>(undefined)
   const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined)
   const [photoError, setPhotoError] = useState<string | undefined>(undefined)

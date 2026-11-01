@@ -133,4 +133,55 @@ describe('Questionnaire', () => {
     expect(screen.queryByRole('img', { name: /anh\.jpg/i })).not.toBeInTheDocument()
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:xem-truoc')
   })
+
+  // Task 12: câu trả lời lần trước (đã qua re-validate ở server) điền sẵn
+  // form, nhưng người dùng vẫn sửa được như bình thường rồi gửi lại.
+  describe('initialAnswers', () => {
+    it('điền sẵn form từ câu trả lời lần trước', async () => {
+      const onSubmit = vi.fn()
+      render(
+        <Questionnaire
+          avoidOptions={['sheer']}
+          onSubmit={onSubmit}
+          pending={false}
+          initialAnswers={{ occasions: ['date'], fitPreference: 'oversized', avoids: ['sheer'], goal: 'colors' }}
+        />,
+      )
+
+      expect(screen.getByLabelText('Đi hẹn')).toBeChecked()
+      expect(screen.getByLabelText('Rộng thùng, oversized')).toBeChecked()
+      expect(screen.getByLabelText(/Chất liệu mỏng/)).toBeChecked()
+      expect(screen.getByLabelText('Tìm bảng màu hợp')).toBeChecked()
+
+      await userEvent.click(screen.getByRole('button', { name: /Xem gợi ý/ }))
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          answers: expect.objectContaining({ occasions: ['date'], fitPreference: 'oversized', goal: 'colors' }),
+        }),
+      )
+    })
+
+    it('không chọn sẵn một "tránh" mà catalog hiện tại không còn hỏi', () => {
+      render(
+        <Questionnaire
+          avoidOptions={[]}
+          onSubmit={vi.fn()}
+          pending={false}
+          initialAnswers={{ occasions: ['work'], fitPreference: 'fitted', avoids: ['sheer'], goal: 'style' }}
+        />,
+      )
+
+      // `avoidOptions` rỗng nên không có checkbox "tránh" nào để render —
+      // state ban đầu phải bỏ qua giá trị catalog không còn tôn trọng được
+      // này, chứ không âm thầm giữ lại một lựa chọn không hiện ra được.
+      expect(screen.queryByLabelText(/Chất liệu mỏng/)).not.toBeInTheDocument()
+      expect(screen.getByLabelText('Đi làm')).toBeChecked()
+    })
+
+    it('không có initialAnswers thì form vẫn trống như trước', () => {
+      render(<Questionnaire avoidOptions={[]} onSubmit={vi.fn()} pending={false} />)
+      expect(screen.getByLabelText('Chưa chắc')).toBeChecked()
+      expect(screen.getByLabelText('Tìm phong cách của mình')).toBeChecked()
+    })
+  })
 })
