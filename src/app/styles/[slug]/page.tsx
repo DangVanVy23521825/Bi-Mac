@@ -14,8 +14,8 @@ import {
   getStyleBySlug,
 } from '@/data'
 import { getAuthState } from '@/features/account/guard'
-import { isStyleSaved } from '@/features/closet/saved'
-import { toggleSavedStyleAction } from '@/features/closet/savedActions'
+import { isStyleSaved, listSavedOutfits } from '@/features/closet/saved'
+import { toggleSavedOutfitAction, toggleSavedStyleAction } from '@/features/closet/savedActions'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getCurrentUserId } from '@/lib/supabase/session'
 
@@ -64,11 +64,17 @@ export default async function StyleDetailPage({ params }: { params: Promise<Para
   // `requireUserId()`.
   const authState = await getAuthState()
   let styleSaved = false
+  let savedOutfitSlugs = new Set<string>()
   if (authState.status === 'signed-in') {
     const userId = await getCurrentUserId()
     const supabase = userId ? await createSupabaseServerClient() : null
     if (userId && supabase) {
       styleSaved = await isStyleSaved(supabase, userId, style.slug)
+      // Một truy vấn cho cả trang, không phải một truy vấn mỗi look — các
+      // look hiển thị ở "Look mẫu" dưới đây tra slug của chính nó trong
+      // tập này thay vì mỗi look tự gọi `isOutfitSaved`.
+      const saved = await listSavedOutfits(supabase, userId)
+      savedOutfitSlugs = new Set(saved.map((outfit) => outfit.slug))
     }
   }
 
@@ -145,7 +151,19 @@ export default async function StyleDetailPage({ params }: { params: Promise<Para
         <SectionHeading eyebrow="Gợi ý" title="Look mẫu" />
         <div className="space-y-16">
           {outfits.map((outfit) => (
-            <OutfitLook key={outfit.slug} outfit={outfit} />
+            <OutfitLook
+              key={outfit.slug}
+              outfit={outfit}
+              save={
+                authState.status === 'unconfigured'
+                  ? undefined
+                  : {
+                      initialSaved: savedOutfitSlugs.has(outfit.slug),
+                      isSignedIn: authState.status === 'signed-in',
+                      onToggle: toggleSavedOutfitAction,
+                    }
+              }
+            />
           ))}
         </div>
       </section>

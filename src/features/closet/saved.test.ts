@@ -9,6 +9,7 @@ import {
   listSavedOutfits,
   listSavedStyles,
   toggleSavedItem,
+  toggleSavedOutfit,
   toggleSavedStyle,
 } from './saved'
 
@@ -197,6 +198,49 @@ describe('toggleSavedItem', () => {
 
     expect(saved).toBe(false)
     expect(getRows('saved_items')).toHaveLength(0)
+  })
+})
+
+describe('toggleSavedOutfit', () => {
+  it('lưu rồi bỏ lưu đúng một lần mỗi lượt', async () => {
+    const { client, getRows } = createFakeSupabaseClient({ saved_outfits: [] })
+
+    const afterFirstCall = await toggleSavedOutfit(client, 'u1', realOutfitSlug)
+    expect(afterFirstCall).toBe(true)
+    expect(getRows('saved_outfits')).toHaveLength(1)
+
+    const afterSecondCall = await toggleSavedOutfit(client, 'u1', realOutfitSlug)
+    expect(afterSecondCall).toBe(false)
+    expect(getRows('saved_outfits')).toHaveLength(0)
+  })
+
+  it('không đụng tới look đã lưu của người khác', async () => {
+    const { client, getRows } = createFakeSupabaseClient({
+      saved_outfits: [{ user_id: 'u2', outfit_slug: realOutfitSlug, created_at: '2026-10-01T00:00:00.000Z' }],
+    })
+
+    const saved = await toggleSavedOutfit(client, 'u1', realOutfitSlug)
+
+    expect(saved).toBe(true)
+    expect(getRows('saved_outfits')).toHaveLength(2)
+  })
+
+  it('từ chối slug không có trong fixtures, không ghi gì vào database', async () => {
+    const { client, getRows } = createFakeSupabaseClient({ saved_outfits: [] })
+
+    await expect(toggleSavedOutfit(client, 'u1', staleSlug)).rejects.toThrow()
+    expect(getRows('saved_outfits')).toHaveLength(0)
+  })
+
+  it('vẫn bỏ lưu được một slug đã bị xoá khỏi fixtures (hàng cũ còn trong DB)', async () => {
+    const { client, getRows } = createFakeSupabaseClient({
+      saved_outfits: [{ user_id: 'u1', outfit_slug: staleSlug, created_at: '2026-10-01T00:00:00.000Z' }],
+    })
+
+    const saved = await toggleSavedOutfit(client, 'u1', staleSlug)
+
+    expect(saved).toBe(false)
+    expect(getRows('saved_outfits')).toHaveLength(0)
   })
 })
 

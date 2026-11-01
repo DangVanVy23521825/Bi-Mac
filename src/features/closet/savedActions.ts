@@ -18,7 +18,7 @@
 // not merely by the button never rendering for a signed-out visitor.
 
 import { requireUserId } from '@/features/account/guard'
-import { toggleSavedItem, toggleSavedStyle } from '@/features/closet/saved'
+import { toggleSavedItem, toggleSavedOutfit, toggleSavedStyle } from '@/features/closet/saved'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 const CONFIG_ERROR = 'Tính năng này cần Supabase được cấu hình, hiện chưa có.'
@@ -48,6 +48,20 @@ export async function toggleSavedStyleAction(styleSlug: string): Promise<ToggleS
 
   try {
     const saved = await toggleSavedStyle(supabase, userId, styleSlug)
+    return { ok: true, saved }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : GENERIC_ERROR }
+  }
+}
+
+export async function toggleSavedOutfitAction(outfitSlug: string): Promise<ToggleSavedResult> {
+  const userId = await requireUserId()
+
+  const supabase = await createSupabaseServerClient()
+  if (!supabase) return { ok: false, error: CONFIG_ERROR }
+
+  try {
+    const saved = await toggleSavedOutfit(supabase, userId, outfitSlug)
     return { ok: true, saved }
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : GENERIC_ERROR }

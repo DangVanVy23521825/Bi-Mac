@@ -13,8 +13,8 @@ import {
   getStylesForItem,
 } from '@/data'
 import { getAuthState } from '@/features/account/guard'
-import { isItemSaved } from '@/features/closet/saved'
-import { toggleSavedItemAction } from '@/features/closet/savedActions'
+import { isItemSaved, listSavedOutfits } from '@/features/closet/saved'
+import { toggleSavedItemAction, toggleSavedOutfitAction } from '@/features/closet/savedActions'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getCurrentUserId } from '@/lib/supabase/session'
 
@@ -64,11 +64,16 @@ export default async function ItemDetailPage({ params }: { params: Promise<Param
   // tĩnh được như cũ (xác nhận bằng `pnpm build` không có biến môi trường).
   const authState = await getAuthState()
   let itemSaved = false
+  let savedOutfitSlugs = new Set<string>()
   if (authState.status === 'signed-in') {
     const userId = await getCurrentUserId()
     const supabase = userId ? await createSupabaseServerClient() : null
     if (userId && supabase) {
       itemSaved = await isItemSaved(supabase, userId, item.slug)
+      // Một truy vấn cho cả trang — các look liên quan dưới đây tra slug
+      // của chính mình trong tập này, không mỗi look tự gọi một query.
+      const saved = await listSavedOutfits(supabase, userId)
+      savedOutfitSlugs = new Set(saved.map((outfit) => outfit.slug))
     }
   }
 
@@ -121,7 +126,18 @@ export default async function ItemDetailPage({ params }: { params: Promise<Param
       </section>
 
       <section className="mt-16">
-        <RelatedOutfits related={related} />
+        <RelatedOutfits
+          related={related}
+          save={
+            authState.status === 'unconfigured'
+              ? undefined
+              : {
+                  isSignedIn: authState.status === 'signed-in',
+                  onToggle: toggleSavedOutfitAction,
+                  savedSlugs: savedOutfitSlugs,
+                }
+          }
+        />
       </section>
     </div>
   )

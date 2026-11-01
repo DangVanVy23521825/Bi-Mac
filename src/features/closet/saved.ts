@@ -104,6 +104,19 @@ export async function toggleSavedStyle(client: SupabaseClient, userId: string, s
   )
 }
 
+export async function toggleSavedOutfit(client: SupabaseClient, userId: string, outfitSlug: string): Promise<boolean> {
+  const existsInCatalog = allOutfits.some((outfit) => outfit.slug === outfitSlug)
+  return toggleSavedSlug(
+    client,
+    OUTFITS_TABLE,
+    'outfit_slug',
+    userId,
+    outfitSlug,
+    existsInCatalog,
+    'Look này không còn trong catalog của Bí Mặc.',
+  )
+}
+
 async function fetchSavedSlugs(client: SupabaseClient, table: string, column: string, userId: string): Promise<string[]> {
   const { data, error } = await client
     .from(table)
