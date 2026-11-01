@@ -283,7 +283,7 @@ export async function runStylist(input: StylistInput, deps: StylistDeps): Promis
   const resolved = resolveAnalysis(analyzeOutcome.analysis, deps.catalog)
 
   const rankedOutfits = rankOutfits(resolved, input.answers, deps.catalog)
-  const rankedItems = rankItems(resolved, input.answers, deps.catalog)
+  const rankedItems = rankItems(resolved, input.answers, deps.catalog.items)
 
   // Everything below is derived from `resolved`/`rankedOutfits` alone — none
   // of it depends on `explain` — so it is all ready for stage 1 before the

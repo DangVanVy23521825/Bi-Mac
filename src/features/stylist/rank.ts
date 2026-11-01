@@ -9,10 +9,18 @@
 // caller supplies the catalog, which is what makes this testable against a
 // small hand-built catalog instead of the full 15-item one, and keeps the
 // grounding testable without a model.
+//
+// `rankItems` takes `items: readonly T[]` (`T extends RankableItem`, see
+// `rankable.ts`) rather than a whole `StylistCatalog` — it only ever reads
+// the item-level fields `RankableItem` declares, so any shape that carries
+// them can be ranked, a catalog `FashionItem` or a personal `PersonalItem`
+// alike. `rankOutfits` still takes the full `StylistCatalog`: an outfit is
+// a catalog-only concept, personal garments belong to none.
 
 import type { FashionItem, Outfit } from '@/types/content'
 import type { Occasion, StylistAnswers } from '@/types/stylist'
 import type { ResolvedAnalysis, StylistCatalog } from './resolve'
+import type { RankableItem } from './rankable'
 
 const STYLE_WEIGHT = 3
 const COLOR_WEIGHT = 2
@@ -104,21 +112,21 @@ export function rankOutfits(
   return ranked.slice(0, limit)
 }
 
-export function rankItems(
+export function rankItems<T extends RankableItem>(
   analysis: ResolvedAnalysis,
   answers: StylistAnswers,
-  catalog: StylistCatalog,
+  items: readonly T[],
   limit = 5,
-): FashionItem[] {
+): T[] {
   const affinityByStyleSlug = new Map(
     analysis.styleDirections.map((direction) => [direction.style.slug, direction.affinity]),
   )
   const paletteSlugs = new Set(analysis.palette.map((entry) => entry.color.slug))
   const avoidSet = new Set(answers.avoids)
 
-  const scored: Array<{ item: FashionItem; score: number }> = []
+  const scored: Array<{ item: T; score: number }> = []
 
-  for (const item of catalog.items) {
+  for (const item of items) {
     // Hard filter 1: avoid.
     const hasAvoidedAttribute = item.attributes.some((attribute) => avoidSet.has(attribute))
     if (hasAvoidedAttribute) continue
