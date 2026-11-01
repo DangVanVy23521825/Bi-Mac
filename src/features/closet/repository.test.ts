@@ -33,6 +33,7 @@ function createFakeSupabaseClient(seedRows: Record<string, unknown>[]) {
     const filters: Array<[string, unknown]> = []
     let op: 'select' | 'insert' | 'update' | 'delete' = 'select'
     let payload: Record<string, unknown> | null = null
+    let rowLimit: number | undefined
 
     const builder = {
       select(columns: string) {
@@ -46,6 +47,11 @@ function createFakeSupabaseClient(seedRows: Record<string, unknown>[]) {
       },
       order(column: string, opts: unknown) {
         calls.push({ method: 'order', args: [table, column, opts] })
+        return builder
+      },
+      limit(count: number) {
+        calls.push({ method: 'limit', args: [table, count] })
+        rowLimit = count
         return builder
       },
       insert(row: Record<string, unknown>) {
@@ -108,7 +114,7 @@ function createFakeSupabaseClient(seedRows: Record<string, unknown>[]) {
         return { data: matched, error: null }
       }
 
-      return { data: matched, error: null }
+      return { data: rowLimit !== undefined ? matched.slice(0, rowLimit) : matched, error: null }
     }
 
     return builder
@@ -202,6 +208,25 @@ describe('listClosetItems', () => {
     const result = await listClosetItems(client, 'user-a')
 
     expect(result).toEqual([])
+  })
+
+  // Task 11 follow-up (review finding): a caller that only needs a few
+  // items (the AI Stylist route) can pass `limit` to bound the query
+  // itself, instead of fetching every row the user owns and discarding
+  // most of them downstream.
+  it('không truyền limit thì lấy hết; truyền limit thì repository tự giới hạn số dòng', async () => {
+    const { client, calls } = createFakeSupabaseClient([
+      dbRow({ id: 'item-a' }),
+      dbRow({ id: 'item-b' }),
+      dbRow({ id: 'item-c' }),
+    ])
+
+    const all = await listClosetItems(client, 'user-a')
+    expect(all).toHaveLength(3)
+
+    const capped = await listClosetItems(client, 'user-a', { limit: 2 })
+    expect(capped).toHaveLength(2)
+    expect(calls).toContainEqual({ method: 'limit', args: ['closet_items', 2] })
   })
 })
 

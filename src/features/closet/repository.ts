@@ -95,12 +95,24 @@ function patchToRow(patch: Partial<ClosetItemDraft>): Partial<Omit<ClosetItemRow
   return row
 }
 
-export async function listClosetItems(client: SupabaseClient, userId: string): Promise<ClosetItem[]> {
-  const { data, error } = await client
-    .from(TABLE)
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+// `options.limit` is optional and unused by the `/closet/items` page (it
+// wants the whole wardrobe) — the AI Stylist route is the one caller that
+// passes it, to bound how many rows it fetches before ranking throws most
+// of them away anyway. `created_at desc` is already the sort order below,
+// which lines up with `closet_items_user_id_created_at_idx`, so "newest
+// first, capped" costs nothing extra to express.
+export async function listClosetItems(
+  client: SupabaseClient,
+  userId: string,
+  options?: { limit?: number },
+): Promise<ClosetItem[]> {
+  let query = client.from(TABLE).select('*').eq('user_id', userId).order('created_at', { ascending: false })
+
+  if (options?.limit !== undefined) {
+    query = query.limit(options.limit)
+  }
+
+  const { data, error } = await query
 
   if (error || !data) return []
   return (data as ClosetItemRow[]).map(rowToClosetItem)

@@ -150,55 +150,112 @@ function isFileLike(value: FormDataEntryValue | null): value is File {
   )
 }
 
-// Loads the signed-in caller's own wardrobe, already resolved into
-// `PersonalItem[]` — `image` is a signed URL minted right here, so
-// `runStylist` (pipeline.ts) stays a pure function that never touches
-// Supabase. Called once, after the request has already passed validation
-// and rate limiting, right before `StylistDeps` is built — not part of the
+// Upper bound on how many closet rows a single stylist request reads.
+// `rankItems` (src/features/stylist/rank.ts) keeps at most 5 of whatever it
+// is given, so fetching an unbounded wardrobe here would mean doing far
+// more Supabase work (and, before the fix this constant is part of, far
+// more image-signing calls) than the response could ever use. Generous
+// enough that a real closet is never truncated in practice, small enough
+// that a pathological wardrobe can't turn this read into the slow part of
+// the request. `listClosetItems` already orders newest-first, which lines
+// up with the table's own `closet_items_user_id_created_at_idx`.
+const STYLIST_CLOSET_FETCH_LIMIT = 50
+
+// Loads the signed-in caller's own wardrobe and shapes it into
+// `PersonalItem[]` for the pipeline — but deliberately leaves `image: null`
+// on every entry. Signing is real Supabase Storage I/O, and `rankItems`
+// (inside `runStylist`) discards all but 5 of whatever is passed in;
+// signing before ranking would mean signing up to `STYLIST_CLOSET_FETCH_LIMIT`
+// images to use at most 5 of them. `closetImagePathById` carries the
+// `imagePath` each item needs for signing *after* ranking has already
+// decided which few survive — see `resolveClosetImages` below, which is
+// where the actual signing happens.
+//
+// Called once, after the request has already passed validation and rate
+// limiting, right before `StylistDeps` is built — not part of the
 // security-critical validation order in the module comment above, because
 // this call can never reject a request, only enrich it.
 //
-// Degrades to `[]` on every failure path named in Review Focus #1 — not
-// signed in, Supabase unconfigured, or a genuine read error. The last of
-// those matters because `getCurrentUserId` (`src/lib/supabase/session.ts`)
-// does not guard its own `auth.getUser()` throw, and a storage/network
-// hiccup from `listClosetItems`/`signClosetImage` is always possible. The
-// stylist's whole value proposition is staying usable, so a bad day in the
-// wardrobe layer must never take the request down with it.
+// Degrades to an empty result on every failure path named in Review Focus
+// #1 — not signed in, Supabase unconfigured, or a genuine read error. The
+// last of those matters because `getCurrentUserId`
+// (`src/lib/supabase/session.ts`) does not guard its own `auth.getUser()`
+// throw, and a network hiccup from `listClosetItems` is always possible.
+// The stylist's whole value proposition is staying usable, so a bad day in
+// the wardrobe layer must never take the request down with it.
 //
 // ADR-012: never log anything derived from a closet item's image — only
 // this static reason string reaches `console.error`.
-async function loadPersonalItems(): Promise<PersonalItem[]> {
+async function loadPersonalItems(): Promise<{
+  personalItems: PersonalItem[]
+  closetImagePathById: Map<string, string>
+}> {
   try {
     const userId = await getCurrentUserId()
     if (!userId) {
-      return []
+      return { personalItems: [], closetImagePathById: new Map() }
     }
 
     const supabase = await createSupabaseServerClient()
     if (!supabase) {
-      return []
+      return { personalItems: [], closetImagePathById: new Map() }
     }
 
-    const closetItems = await listClosetItems(supabase, userId)
+    const closetItems = await listClosetItems(supabase, userId, { limit: STYLIST_CLOSET_FETCH_LIMIT })
 
-    return await Promise.all(
-      closetItems.map(async (item) => ({
-        slug: item.id,
-        colorSlugs: item.colorSlugs,
-        styleSlugs: item.styleSlugs,
-        occasions: item.occasions,
-        fit: item.fit,
-        attributes: item.attributes,
-        name: item.name,
-        image: await signClosetImage(item.imagePath),
-        note: item.note,
-      })),
-    )
+    const closetImagePathById = new Map(closetItems.map((item) => [item.id, item.imagePath]))
+    const personalItems: PersonalItem[] = closetItems.map((item) => ({
+      slug: item.id,
+      colorSlugs: item.colorSlugs,
+      styleSlugs: item.styleSlugs,
+      occasions: item.occasions,
+      fit: item.fit,
+      attributes: item.attributes,
+      name: item.name,
+      image: null,
+      note: item.note,
+    }))
+
+    return { personalItems, closetImagePathById }
   } catch {
     console.error('stylist-closet-read-failed')
-    return []
+    return { personalItems: [], closetImagePathById: new Map() }
   }
+}
+
+// Signs images for exactly the closet entries that survived ranking —
+// `outcome.closetItems` arrives here with `image: null` on every entry
+// (see `loadPersonalItems` above), and there are at most 5 of them
+// (`rankItems`'s default limit), never the whole wardrobe. Runs after
+// `runStylist` resolves and before the `result` NDJSON line is built —
+// real Supabase Storage I/O belongs in the route, never in the pipeline.
+//
+// Each signing call is isolated in its own try/catch: `signClosetImage`
+// already turns a *structured* Supabase error into `null` internally, but
+// it can still throw outright (a genuine network exception). One garment
+// failing to sign must cost only that garment's image, never the garment
+// itself and never the rest of the group — so a throw here is caught
+// per-item and degrades to `image: null`, same as `signClosetImage`'s own
+// handled-error case.
+async function resolveClosetImages(
+  closetItems: ReadonlyArray<{ id: string; name: string; image: string | null; note: string | null }>,
+  closetImagePathById: Map<string, string>,
+): Promise<Array<{ id: string; name: string; image: string | null; note: string | null }>> {
+  return Promise.all(
+    closetItems.map(async (item) => {
+      const path = closetImagePathById.get(item.id)
+      if (path === undefined) {
+        return item
+      }
+      try {
+        const image = await signClosetImage(path)
+        return { ...item, image }
+      } catch {
+        console.error('stylist-closet-image-sign-failed')
+        return { ...item, image: null }
+      }
+    }),
+  )
 }
 
 // Builds the two-stage NDJSON stream. `input`/`deps` are passed through
@@ -211,10 +268,16 @@ async function loadPersonalItems(): Promise<PersonalItem[]> {
 // `degradedReasonOverride` carries the route's rate-limit correction (see
 // the call site below): `runStylist` cannot tell "no key" apart from
 // "rate-limited" on its own, since both arrive as `primary: null`.
+//
+// `closetImagePathById` is threaded all the way in here — rather than
+// signed earlier — because signing belongs *after* ranking has cut the
+// caller's wardrobe down to the few entries that actually made it into
+// `outcome.closetItems` (see `resolveClosetImages`'s own doc comment).
 function createStylistStream(
   input: StylistInput,
   deps: StylistDeps,
   degradedReasonOverride: DegradedReason,
+  closetImagePathById: Map<string, string>,
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder()
 
@@ -229,12 +292,13 @@ function createStylistStream(
       }
 
       runStylist(input, streamingDeps)
-        .then((outcome) => {
+        .then(async (outcome) => {
+          const closetItems = await resolveClosetImages(outcome.closetItems, closetImagePathById)
           const resultLine = {
             type: 'result' as const,
             outfits: outcome.outfits,
             items: outcome.items,
-            closetItems: outcome.closetItems,
+            closetItems,
             providerId: outcome.providerId,
             degraded: outcome.degraded,
             degradedReason: degradedReasonOverride ?? outcome.degradedReason,
@@ -315,7 +379,10 @@ export async function POST(request: Request): Promise<Response> {
   // request never pays for a wardrobe read it doesn't need — but this call
   // itself is not part of the security-critical order above, since it can
   // never reject the request (see `loadPersonalItems`'s own doc comment).
-  const personalItems = await loadPersonalItems()
+  // `closetImagePathById` is threaded through to `createStylistStream`
+  // below instead of resolved here, so image signing happens only for the
+  // entries that survive ranking (see `resolveClosetImages`).
+  const { personalItems, closetImagePathById } = await loadPersonalItems()
 
   const deps: StylistDeps = {
     primary,
@@ -336,7 +403,7 @@ export async function POST(request: Request): Promise<Response> {
   // comment above.)
   const degradedReasonOverride: DegradedReason = rateLimited ? 'rate-limited' : null
 
-  const stream = createStylistStream(input, deps, degradedReasonOverride)
+  const stream = createStylistStream(input, deps, degradedReasonOverride, closetImagePathById)
 
   return new Response(stream, {
     status: 200,

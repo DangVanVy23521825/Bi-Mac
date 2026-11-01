@@ -375,7 +375,7 @@ describe('POST /api/stylist', () => {
           },
         ],
       })
-      expect(listClosetItemsMock).toHaveBeenCalledWith(expect.anything(), userId)
+      expect(listClosetItemsMock).toHaveBeenCalledWith(expect.anything(), userId, expect.objectContaining({ limit: expect.any(Number) }))
     })
 
     it('lỗi khi đọc tủ đồ không làm hỏng cả request', async () => {
@@ -388,6 +388,106 @@ describe('POST /api/stylist', () => {
       const lines = await ndjson(res)
       expect(lines.map((l) => l.type)).toEqual(['analysis', 'result'])
       expect(lines.at(-1)).toMatchObject({ closetItems: [] })
+    })
+
+    // Review finding (IMPORTANT 1): signing happens per item, after
+    // ranking — one item's `signClosetImage` throwing outright (a genuine
+    // network exception, distinct from the structured error
+    // `signClosetImage` already turns into `null` internally) must cost
+    // only that item's image, never the item itself and never the rest of
+    // the ranked group.
+    it('một món ký ảnh lỗi (throw) không làm hỏng món đó hay nhóm còn lại', async () => {
+      const userId = 'user-iso'
+      getCurrentUserIdMock.mockResolvedValue(userId)
+      createSupabaseServerClientMock.mockResolvedValue({})
+      listClosetItemsMock.mockResolvedValue([
+        {
+          id: 'closet-bad',
+          userId,
+          name: 'Áo lỗi ký ảnh',
+          imagePath: `${userId}/bad.jpg`,
+          category: 'tops',
+          colorSlugs: [],
+          styleSlugs: [],
+          occasions: ['casual'],
+          fit: null,
+          attributes: [],
+          note: null,
+          labelSource: 'user',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'closet-good',
+          userId,
+          name: 'Áo ổn',
+          imagePath: `${userId}/good.jpg`,
+          category: 'tops',
+          colorSlugs: [],
+          styleSlugs: [],
+          occasions: ['casual'],
+          fit: null,
+          attributes: [],
+          note: null,
+          labelSource: 'user',
+          createdAt: '2026-01-02T00:00:00.000Z',
+        },
+      ])
+      signClosetImageMock.mockImplementation(async (path: string) => {
+        if (path.includes('bad')) {
+          throw new Error('simulated-signing-network-exception')
+        }
+        return `https://signed.example/${path}`
+      })
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      const res = await POST(formRequest({ answers: validAnswers }))
+      expect(res.status).toBe(200)
+      const lines = await ndjson(res)
+      const result = lines.at(-1) as { closetItems: Array<{ id: string; image: string | null }> }
+
+      expect(result.closetItems).toHaveLength(2)
+      expect(result.closetItems.find((item) => item.id === 'closet-bad')?.image).toBeNull()
+      expect(result.closetItems.find((item) => item.id === 'closet-good')?.image).toBe(
+        `https://signed.example/${userId}/good.jpg`,
+      )
+      expect(errSpy).toHaveBeenCalled()
+    })
+
+    // Review finding (IMPORTANT 2): signing must happen only for the
+    // entries that survive `rankItems`'s default limit of 5 — not for
+    // every row `listClosetItems` returns. A wardrobe with more than 5
+    // items proves this directly: `signClosetImageMock` must be called no
+    // more times than there are entries in the final `closetItems`.
+    it('chỉ ký ảnh cho những món đã qua rank, không ký cả tủ', async () => {
+      const userId = 'user-many'
+      getCurrentUserIdMock.mockResolvedValue(userId)
+      createSupabaseServerClientMock.mockResolvedValue({})
+      const manyItems = Array.from({ length: 8 }, (_, index) => ({
+        id: `closet-${index}`,
+        userId,
+        name: `Món ${index}`,
+        imagePath: `${userId}/item-${index}.jpg`,
+        category: 'tops',
+        colorSlugs: [],
+        styleSlugs: [],
+        occasions: ['casual'],
+        fit: null,
+        attributes: [],
+        note: null,
+        labelSource: 'user',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      }))
+      listClosetItemsMock.mockResolvedValue(manyItems)
+      signClosetImageMock.mockResolvedValue('https://signed.example/item.jpg')
+
+      const res = await POST(formRequest({ answers: validAnswers }))
+      expect(res.status).toBe(200)
+      const lines = await ndjson(res)
+      const result = lines.at(-1) as { closetItems: unknown[] }
+
+      expect(result.closetItems.length).toBeLessThanOrEqual(5)
+      expect(result.closetItems.length).toBeGreaterThan(0)
+      expect(signClosetImageMock).toHaveBeenCalledTimes(result.closetItems.length)
     })
   })
 })
