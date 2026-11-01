@@ -42,6 +42,7 @@ const outcome: StylistOutcome = {
       href: '/wardrobe/outerwear/blazer',
     },
   ],
+  closetItems: [],
   notes: [],
 }
 

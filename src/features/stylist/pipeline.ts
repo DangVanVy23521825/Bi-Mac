@@ -27,6 +27,7 @@ import type { OutfitDescriptor, StylistVocabulary } from '@/types/stylist'
 import type { StylistInput } from './input'
 import { resolveAnalysis, type StylistCatalog } from './resolve'
 import { rankItems, rankOutfits, type RankedOutfit } from './rank'
+import type { PersonalItem } from './rankable'
 import type { AnalyzeRequest, ExplainRequest, StylistProvider } from '@/lib/ai/provider'
 import type { StylistAnalysis, StylistExplanation } from '@/lib/ai/schema'
 import type { StylistAnswers } from '@/types/stylist'
@@ -61,6 +62,12 @@ export type StylistOutcome = {
     items: Array<{ slug: string; name: string; href: string }>
   }>
   items: Array<{ slug: string; name: string; excerpt: string; image: string | null; href: string }>
+  // Món trong tủ cá nhân của người dùng, xếp hạng bằng chính `rankItems`
+  // dùng cho `items` ở trên nhưng giữ RIÊNG nhóm — `items` (catalog) không
+  // đổi hình dạng/thứ tự/nội dung khi `closetItems` có hoặc không có gì.
+  // Không có `href`: món cá nhân không có trang công khai. `id` lấy từ
+  // `PersonalItem.slug`, là id của chính closet item.
+  closetItems: Array<{ id: string; name: string; image: string | null; note: string | null }>
   notes: string[]
 }
 
@@ -97,6 +104,12 @@ export type StylistDeps = {
   // everything until the whole pipeline finishes. Unset → not called,
   // behavior is identical to before this hook existed.
   onAnalysis?: (stage: AnalysisStage) => void
+  // The caller's own wardrobe, already resolved (Task 11's concern: reading
+  // `closet_items` and turning storage paths into signed URLs happens
+  // there, never here — this module stays a pure function, no I/O). Unset
+  // or empty → `closetItems` on the outcome is `[]`, identical to the
+  // behavior before this field existed.
+  personalItems?: readonly PersonalItem[]
 }
 
 // Thrown by `withTimeout` when the wrapped promise doesn't settle in time.
@@ -284,6 +297,7 @@ export async function runStylist(input: StylistInput, deps: StylistDeps): Promis
 
   const rankedOutfits = rankOutfits(resolved, input.answers, deps.catalog)
   const rankedItems = rankItems(resolved, input.answers, deps.catalog.items)
+  const rankedPersonalItems = rankItems(resolved, input.answers, deps.personalItems ?? [])
 
   // Everything below is derived from `resolved`/`rankedOutfits` alone — none
   // of it depends on `explain` — so it is all ready for stage 1 before the
@@ -356,6 +370,13 @@ export async function runStylist(input: StylistInput, deps: StylistDeps): Promis
     href: itemHref(item),
   }))
 
+  const closetItems = rankedPersonalItems.map((item) => ({
+    id: item.slug,
+    name: item.name,
+    image: item.image,
+    note: item.note,
+  }))
+
   return {
     goal: input.answers.goal,
     providerId: analyzeOutcome.providerUsed.id,
@@ -365,6 +386,7 @@ export async function runStylist(input: StylistInput, deps: StylistDeps): Promis
     palette,
     outfits,
     items,
+    closetItems,
     notes,
   }
 }

@@ -4,6 +4,7 @@ import { createDeterministicProvider } from '@/lib/ai/deterministic'
 import type { AnalyzeRequest, ExplainRequest, StylistProvider } from '@/lib/ai/provider'
 import type { StylistCatalog } from '@/features/stylist/resolve'
 import type { StylistInput } from '@/features/stylist/input'
+import type { PersonalItem } from '@/features/stylist/rankable'
 import { runStylist, type StylistDeps } from '@/features/stylist/pipeline'
 import { OCCASIONS } from '@/types/stylist'
 
@@ -376,5 +377,51 @@ describe('runStylist', () => {
     const outcome = await runPromise
     expect(explainResolved).toBe(true)
     expect(outcome.outfits.length).toBeGreaterThan(0)
+  })
+
+  describe('closetItems', () => {
+    const personalItem: PersonalItem = {
+      slug: 'ca-nhan-ao-so-mi',
+      name: 'Áo sơ mi của tôi',
+      image: null,
+      note: 'Mua năm ngoái',
+      colorSlugs: ['kem'],
+      styleSlugs: ['minimalist'],
+      occasions: ['work', 'casual'],
+      fit: 'fitted',
+      attributes: [],
+    }
+
+    it('closetItems rỗng khi không truyền personalItems', async () => {
+      const outcome = await runStylist(input, deps)
+      expect(outcome.closetItems).toEqual([])
+    })
+
+    it('closetItems chứa món cá nhân hợp lệ, items catalog không đổi', async () => {
+      const baseline = await runStylist(input, deps)
+      const outcome = await runStylist(input, { ...deps, personalItems: [personalItem] })
+
+      expect(outcome.items).toEqual(baseline.items)
+      expect(outcome.closetItems).toEqual([
+        { id: 'ca-nhan-ao-so-mi', name: 'Áo sơ mi của tôi', image: null, note: 'Mua năm ngoái' },
+      ])
+    })
+
+    it('món cá nhân có thuộc tính bị avoid thì không lọt vào closetItems', async () => {
+      const avoided: PersonalItem = { ...personalItem, slug: 'ca-nhan-ao-xuyen-thau', attributes: ['sheer'] }
+
+      const outcome = await runStylist(
+        { ...input, answers: { ...input.answers, avoids: ['sheer'] } },
+        { ...deps, personalItems: [avoided] },
+      )
+
+      expect(outcome.closetItems).toEqual([])
+    })
+
+    it('tủ rỗng cho kết quả giống hệt khi không có personalItems', async () => {
+      const withEmptyArray = await runStylist(input, { ...deps, personalItems: [] })
+      const withUndefined = await runStylist(input, deps)
+      expect(withEmptyArray).toEqual(withUndefined)
+    })
   })
 })
