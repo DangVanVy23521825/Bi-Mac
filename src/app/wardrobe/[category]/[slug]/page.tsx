@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { RelatedOutfits } from '@/components/editorial/RelatedOutfits'
+import { SaveButton } from '@/components/closet/SaveButton'
 import { EditorialImage } from '@/components/ui/EditorialImage'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { ItemFacts } from '@/components/wardrobe/ItemFacts'
@@ -11,6 +12,11 @@ import {
   getRelatedOutfits,
   getStylesForItem,
 } from '@/data'
+import { getAuthState } from '@/features/account/guard'
+import { isItemSaved } from '@/features/closet/saved'
+import { toggleSavedItemAction } from '@/features/closet/savedActions'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUserId } from '@/lib/supabase/session'
 
 type Params = { category: string; slug: string }
 
@@ -50,6 +56,22 @@ export default async function ItemDetailPage({ params }: { params: Promise<Param
     getRelatedOutfits(item.slug),
   ])
 
+  // Trang này vẫn phải xem được không cần đăng nhập (quyết định #3) — gọi
+  // `getAuthState()` trực tiếp (không qua `requireUserId()`, hàm đó
+  // redirect) đúng như comment đầu file của chính `getAuthState()`: "mọi
+  // thứ chỉ cần RENDER khác đi thì gọi `getAuthState()`". Khi chưa cấu
+  // hình Supabase, nhánh này dừng trước khi chạm `cookies()` nên trang vẫn
+  // tĩnh được như cũ (xác nhận bằng `pnpm build` không có biến môi trường).
+  const authState = await getAuthState()
+  let itemSaved = false
+  if (authState.status === 'signed-in') {
+    const userId = await getCurrentUserId()
+    const supabase = userId ? await createSupabaseServerClient() : null
+    if (userId && supabase) {
+      itemSaved = await isItemSaved(supabase, userId, item.slug)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
       <div className="grid gap-10 sm:grid-cols-2 sm:items-center">
@@ -57,6 +79,16 @@ export default async function ItemDetailPage({ params }: { params: Promise<Param
         <div>
           <h1 className="font-display text-4xl sm:text-5xl">{item.name}</h1>
           <p className="mt-4 max-w-md font-body text-base text-accent-soft">{item.excerpt}</p>
+          {authState.status !== 'unconfigured' && (
+            <div className="mt-6">
+              <SaveButton
+                slug={item.slug}
+                initialSaved={itemSaved}
+                isSignedIn={authState.status === 'signed-in'}
+                onToggle={toggleSavedItemAction}
+              />
+            </div>
+          )}
         </div>
       </div>
 

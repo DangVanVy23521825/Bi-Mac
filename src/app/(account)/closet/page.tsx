@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 
-// `/closet` vẫn là trang tổng cho mọi nội dung đã lưu (looks, styles —
-// Task sau); phần tủ đồ của riêng người dùng (thêm/sửa nhãn/xoá món) sống
-// ở `/closet/items` (Task 7), vẫn trong cùng route group `(account)` nên
-// kế thừa cùng một cổng đăng nhập.
+// `/closet` vẫn là trang tổng cho mọi nội dung đã lưu. Phần tủ đồ của
+// riêng người dùng (thêm/sửa nhãn/xoá món) sống ở `/closet/items` (Task 7);
+// phần món/look/style của Bí Mặc mà người dùng đã lưu theo slug sống ở hai
+// route anh em `/closet/looks` và `/closet/styles` (Task 8). Cả ba đều
+// trong cùng route group `(account)` nên kế thừa cùng một cổng đăng nhập.
 export default function ClosetPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
@@ -19,6 +20,18 @@ export default function ClosetPage() {
           className="font-body text-sm uppercase tracking-[0.14em] text-accent underline-offset-4 hover:underline"
         >
           Xem tủ đồ của tôi
+        </Link>
+        <Link
+          href="/closet/looks"
+          className="font-body text-sm uppercase tracking-[0.14em] text-accent underline-offset-4 hover:underline"
+        >
+          Look đã lưu
+        </Link>
+        <Link
+          href="/closet/styles"
+          className="font-body text-sm uppercase tracking-[0.14em] text-accent underline-offset-4 hover:underline"
+        >
+          Style đã lưu
         </Link>
         <Link href="/styles" className="font-body text-sm uppercase tracking-[0.14em] text-accent underline-offset-4 hover:underline">
           Khám phá theo style
