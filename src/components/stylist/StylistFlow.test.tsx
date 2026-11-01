@@ -64,6 +64,7 @@ const resultLine = {
     },
   ],
   items: [],
+  closetItems: [],
   providerId: 'gemini' as const,
   degraded: false,
   degradedReason: null,

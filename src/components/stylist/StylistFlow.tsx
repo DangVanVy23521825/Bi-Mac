@@ -65,6 +65,7 @@ type ResultLine = {
   type: 'result'
   outfits: StylistOutcome['outfits']
   items: StylistOutcome['items']
+  closetItems: StylistOutcome['closetItems']
   providerId: StylistOutcome['providerId']
   degraded: StylistOutcome['degraded']
   degradedReason: StylistOutcome['degradedReason']
@@ -96,10 +97,7 @@ function assembleOutcome(
     palette: analysis.palette,
     outfits: result.outfits,
     items: result.items,
-    // The route doesn't send closet items over the wire yet — that's
-    // Task 11 (route + result UI). Until then this is always empty, same
-    // as before `closetItems` existed on `StylistOutcome`.
-    closetItems: [],
+    closetItems: result.closetItems,
     notes: analysis.notes,
   }
 }

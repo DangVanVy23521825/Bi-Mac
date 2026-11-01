@@ -22,6 +22,7 @@ type StyleDirection = StylistOutcome['styleDirections'][number]
 type PaletteEntry = StylistOutcome['palette'][number]
 type OutfitEntry = StylistOutcome['outfits'][number]
 type ItemEntry = StylistOutcome['items'][number]
+type ClosetItemEntry = StylistOutcome['closetItems'][number]
 
 function affinityLabel(affinity: number): string {
   if (affinity >= 0.75) {
@@ -200,12 +201,49 @@ function ItemsSection({ items }: { items: ItemEntry[] }) {
   )
 }
 
+// Task 11: the user's own wardrobe, ranked by the same `rankItems` as
+// `ItemsSection` above but kept in a group of its own — deliberately not a
+// variant of `ItemsSection`, because a personal garment has no public page
+// (`PersonalItem`/`closetItems` carry no `href`, see pipeline.ts) and must
+// never read like a catalog recommendation the visitor could buy or browse
+// to. Not signed in, or an empty wardrobe, both land here as `items: []`
+// and this section renders nothing — same shape as every other section on
+// this page.
+function ClosetItemsSection({ items }: { items: ClosetItemEntry[] }) {
+  if (items.length === 0) {
+    return null
+  }
+  return (
+    <section className="space-y-6">
+      <h2 className="font-display text-2xl">Món trong tủ bạn dùng được</h2>
+      <p className="font-body text-sm text-accent-soft">
+        Đây là đồ của chính bạn trong Tủ đồ của tôi — không phải sản phẩm của Bí Mặc.
+      </p>
+      <ul className="space-y-4">
+        {items.map((item: ClosetItemEntry) => (
+          <li key={item.id} className="border-t border-muted/40 pt-4">
+            <div className="grid gap-4 sm:grid-cols-[6rem_1fr] sm:items-start">
+              <EditorialImage src={item.image} alt={item.name} ratio="look" />
+              <div>
+                <p className="font-display text-lg">{item.name}</p>
+                {item.note && (
+                  <p className="mt-1 max-w-xl font-body text-sm text-accent-soft">{item.note}</p>
+                )}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 type Props = {
   outcome: StylistOutcome
 }
 
 export function StylistResult({ outcome }: Props) {
-  const { goal, degraded, styleDirections, palette, outfits, items, notes } = outcome
+  const { goal, degraded, styleDirections, palette, outfits, items, closetItems, notes } = outcome
 
   const isFullyEmpty =
     styleDirections.length === 0 && palette.length === 0 && outfits.length === 0 && items.length === 0
@@ -241,6 +279,7 @@ export function StylistResult({ outcome }: Props) {
           {hasAnEmptySection && <EmptyStateLinks />}
         </>
       )}
+      <ClosetItemsSection items={closetItems} />
     </div>
   )
 }

@@ -81,6 +81,38 @@ vi.mock('@/features/stylist/pipeline', async (importOriginal) => {
   }
 })
 
+// Task 11's four closet seams (`getCurrentUserId`, `createSupabaseServerClient`,
+// `listClosetItems`, `signClosetImage`) are mocked wholesale rather than left
+// real, for the same reason the test suite has no Supabase env vars at all:
+// the real `createSupabaseServerClient()` always returns `null` in this
+// environment, which would make "đã đăng nhập" impossible to exercise. Each
+// mock defaults in `beforeEach` to exactly today's behavior (`null`/`[]`)
+// so every pre-existing test above is unaffected and closetItems stays `[]`
+// unless a test below explicitly overrides one of these.
+const { getCurrentUserIdMock, createSupabaseServerClientMock, listClosetItemsMock, signClosetImageMock } =
+  vi.hoisted(() => ({
+    getCurrentUserIdMock: vi.fn(),
+    createSupabaseServerClientMock: vi.fn(),
+    listClosetItemsMock: vi.fn(),
+    signClosetImageMock: vi.fn(),
+  }))
+
+vi.mock('@/lib/supabase/session', () => ({
+  getCurrentUserId: getCurrentUserIdMock,
+}))
+
+vi.mock('@/lib/supabase/server', () => ({
+  createSupabaseServerClient: createSupabaseServerClientMock,
+}))
+
+vi.mock('@/features/closet/repository', () => ({
+  listClosetItems: listClosetItemsMock,
+}))
+
+vi.mock('@/features/closet/images', () => ({
+  signClosetImage: signClosetImageMock,
+}))
+
 import { MAX_PHOTO_BYTES, PER_IP_LIMIT, POST } from './route'
 
 const validAnswers = JSON.stringify({
@@ -134,6 +166,10 @@ describe('POST /api/stylist', () => {
   beforeEach(() => {
     setExplainGate(Promise.resolve())
     setShouldRejectPipeline(false)
+    getCurrentUserIdMock.mockReset().mockResolvedValue(null)
+    createSupabaseServerClientMock.mockReset().mockResolvedValue(null)
+    listClosetItemsMock.mockReset().mockResolvedValue([])
+    signClosetImageMock.mockReset().mockResolvedValue(null)
   })
 
   it('trả 400 khi answers không hợp schema', async () => {
@@ -273,5 +309,85 @@ describe('POST /api/stylist', () => {
     expect(second.done).toBe(false)
     const secondLine = JSON.parse(new TextDecoder().decode(second.value).trim()) as Record<string, unknown>
     expect(secondLine.type).toBe('result')
+  })
+
+  // Task 11: the `result` line's `closetItems` must come from the signed-in
+  // caller's own wardrobe, and the stylist must never fail a request just
+  // because reading that wardrobe went badly (Review Focus #1). Each test
+  // below exercises exactly one of the degrade paths named in the brief.
+  describe('closetItems trong result', () => {
+    it('chưa đăng nhập vẫn chạy, closetItems rỗng', async () => {
+      getCurrentUserIdMock.mockResolvedValue(null)
+
+      const res = await POST(formRequest({ answers: validAnswers }))
+      expect(res.status).toBe(200)
+      const lines = await ndjson(res)
+      expect(lines.at(-1)).toMatchObject({ closetItems: [] })
+      // Not signed in means there is no user id to read a wardrobe for —
+      // the route must never even attempt the closet read.
+      expect(listClosetItemsMock).not.toHaveBeenCalled()
+    })
+
+    it('Supabase chưa cấu hình vẫn chạy, không ném lỗi', async () => {
+      getCurrentUserIdMock.mockResolvedValue('user-unconfigured')
+      createSupabaseServerClientMock.mockResolvedValue(null)
+
+      const res = await POST(formRequest({ answers: validAnswers }))
+      expect(res.status).toBe(200)
+      const lines = await ndjson(res)
+      expect(lines.at(-1)).toMatchObject({ closetItems: [] })
+      expect(listClosetItemsMock).not.toHaveBeenCalled()
+    })
+
+    it('đã đăng nhập thì closetItems lấy từ tủ của đúng user đó', async () => {
+      const userId = 'user-42'
+      getCurrentUserIdMock.mockResolvedValue(userId)
+      createSupabaseServerClientMock.mockResolvedValue({})
+      listClosetItemsMock.mockResolvedValue([
+        {
+          id: 'closet-item-1',
+          userId,
+          name: 'Áo sơ mi trắng của tôi',
+          imagePath: `${userId}/ao-so-mi.jpg`,
+          category: 'tops',
+          colorSlugs: ['trang'],
+          styleSlugs: ['minimalist'],
+          occasions: ['casual'],
+          fit: null,
+          attributes: [],
+          note: 'Mua năm ngoái',
+          labelSource: 'user',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ])
+      signClosetImageMock.mockResolvedValue('https://signed.example/ao-so-mi.jpg')
+
+      const res = await POST(formRequest({ answers: validAnswers }))
+      expect(res.status).toBe(200)
+      const lines = await ndjson(res)
+      expect(lines.at(-1)).toMatchObject({
+        closetItems: [
+          {
+            id: 'closet-item-1',
+            name: 'Áo sơ mi trắng của tôi',
+            image: 'https://signed.example/ao-so-mi.jpg',
+            note: 'Mua năm ngoái',
+          },
+        ],
+      })
+      expect(listClosetItemsMock).toHaveBeenCalledWith(expect.anything(), userId)
+    })
+
+    it('lỗi khi đọc tủ đồ không làm hỏng cả request', async () => {
+      getCurrentUserIdMock.mockResolvedValue('user-99')
+      createSupabaseServerClientMock.mockResolvedValue({})
+      listClosetItemsMock.mockRejectedValue(new Error('simulated-closet-read-failure'))
+
+      const res = await POST(formRequest({ answers: validAnswers }))
+      expect(res.status).toBe(200)
+      const lines = await ndjson(res)
+      expect(lines.map((l) => l.type)).toEqual(['analysis', 'result'])
+      expect(lines.at(-1)).toMatchObject({ closetItems: [] })
+    })
   })
 })

@@ -107,4 +107,32 @@ describe('StylistResult', () => {
     const { container } = render(<StylistResult outcome={outcome} />)
     expect(container.querySelectorAll('[data-placeholder="true"]').length).toBeGreaterThanOrEqual(2)
   })
+
+  // Task 11: a user's own wardrobe gets its own labelled section, separate
+  // from the catalog `items` list above — it must never be silently merged
+  // into that list, and must never appear at all for a visitor with no
+  // closet items (not signed in, or an empty wardrobe — same shape either
+  // way on `StylistOutcome`).
+  it('hiện mục đồ trong tủ cá nhân, có nhãn rõ đây là đồ của người dùng', () => {
+    render(
+      <StylistResult
+        outcome={{
+          ...outcome,
+          closetItems: [
+            { id: 'closet-1', name: 'Áo sơ mi trắng của tôi', image: null, note: 'Mua năm ngoái' },
+          ],
+        }}
+      />,
+    )
+    expect(screen.getByText('Món trong tủ bạn dùng được')).toBeInTheDocument()
+    expect(screen.getByText('Áo sơ mi trắng của tôi')).toBeInTheDocument()
+    expect(screen.getByText('Mua năm ngoái')).toBeInTheDocument()
+    // Must stay out of the catalog items list — only ever its own section.
+    expect(screen.queryByRole('link', { name: /Áo sơ mi trắng của tôi/ })).not.toBeInTheDocument()
+  })
+
+  it('không hiện mục tủ đồ cá nhân khi tủ trống hoặc chưa đăng nhập', () => {
+    render(<StylistResult outcome={outcome} />)
+    expect(screen.queryByText('Món trong tủ bạn dùng được')).not.toBeInTheDocument()
+  })
 })

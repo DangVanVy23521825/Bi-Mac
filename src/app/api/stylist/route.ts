@@ -39,13 +39,18 @@
 // Streaming works fine on Node, and Edge is deprecated on this platform.
 
 import { allColors, allItems, allOutfits, allStyles } from '@/data'
+import { listClosetItems } from '@/features/closet/repository'
+import { signClosetImage } from '@/features/closet/images'
 import { stylistInputSchema, type StylistInput } from '@/features/stylist/input'
 import { runStylist, type DegradedReason, type StylistDeps } from '@/features/stylist/pipeline'
 import { ALLOWED_PHOTO_TYPES, MAX_PHOTO_BYTES } from '@/features/stylist/photo-limits'
+import type { PersonalItem } from '@/features/stylist/rankable'
 import type { StylistCatalog } from '@/features/stylist/resolve'
 import { createDeterministicProvider } from '@/lib/ai/deterministic'
 import { createGeminiProvider } from '@/lib/ai/gemini'
 import { createMemoryRateLimiter } from '@/lib/rate-limit'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUserId } from '@/lib/supabase/session'
 
 // Re-exported so `route.test.ts` and anything else probing the HTTP
 // boundary can keep importing these from the route itself — the values
@@ -145,6 +150,57 @@ function isFileLike(value: FormDataEntryValue | null): value is File {
   )
 }
 
+// Loads the signed-in caller's own wardrobe, already resolved into
+// `PersonalItem[]` — `image` is a signed URL minted right here, so
+// `runStylist` (pipeline.ts) stays a pure function that never touches
+// Supabase. Called once, after the request has already passed validation
+// and rate limiting, right before `StylistDeps` is built — not part of the
+// security-critical validation order in the module comment above, because
+// this call can never reject a request, only enrich it.
+//
+// Degrades to `[]` on every failure path named in Review Focus #1 — not
+// signed in, Supabase unconfigured, or a genuine read error. The last of
+// those matters because `getCurrentUserId` (`src/lib/supabase/session.ts`)
+// does not guard its own `auth.getUser()` throw, and a storage/network
+// hiccup from `listClosetItems`/`signClosetImage` is always possible. The
+// stylist's whole value proposition is staying usable, so a bad day in the
+// wardrobe layer must never take the request down with it.
+//
+// ADR-012: never log anything derived from a closet item's image — only
+// this static reason string reaches `console.error`.
+async function loadPersonalItems(): Promise<PersonalItem[]> {
+  try {
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      return []
+    }
+
+    const supabase = await createSupabaseServerClient()
+    if (!supabase) {
+      return []
+    }
+
+    const closetItems = await listClosetItems(supabase, userId)
+
+    return await Promise.all(
+      closetItems.map(async (item) => ({
+        slug: item.id,
+        colorSlugs: item.colorSlugs,
+        styleSlugs: item.styleSlugs,
+        occasions: item.occasions,
+        fit: item.fit,
+        attributes: item.attributes,
+        name: item.name,
+        image: await signClosetImage(item.imagePath),
+        note: item.note,
+      })),
+    )
+  } catch {
+    console.error('stylist-closet-read-failed')
+    return []
+  }
+}
+
 // Builds the two-stage NDJSON stream. `input`/`deps` are passed through
 // rather than a finished `StylistOutcome`, because there is no finished
 // outcome yet when this stream starts — `runStylist` is kicked off *inside*
@@ -178,6 +234,7 @@ function createStylistStream(
             type: 'result' as const,
             outfits: outcome.outfits,
             items: outcome.items,
+            closetItems: outcome.closetItems,
             providerId: outcome.providerId,
             degraded: outcome.degraded,
             degradedReason: degradedReasonOverride ?? outcome.degradedReason,
@@ -254,12 +311,19 @@ export async function POST(request: Request): Promise<Response> {
   const hasKey = Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY)
   const primary = !rateLimited && hasKey ? createGeminiProvider() : null
 
+  // Read after rate limiting (step 4) so a malformed or rate-limited
+  // request never pays for a wardrobe read it doesn't need — but this call
+  // itself is not part of the security-critical order above, since it can
+  // never reject the request (see `loadPersonalItems`'s own doc comment).
+  const personalItems = await loadPersonalItems()
+
   const deps: StylistDeps = {
     primary,
     fallback: createDeterministicProvider(),
     catalog,
     timeoutMs: STYLIST_TIMEOUT_MS,
     photoTimeoutMs: STYLIST_PHOTO_TIMEOUT_MS,
+    personalItems,
   }
 
   // `runStylist` always reports `degradedReason: 'no-key'` whenever
