@@ -238,6 +238,37 @@ A verified, not hypothetical, consequence worth recording: because `getAuthState
 
 ---
 
+## ADR-022 — Account deletion: bucket first, auth user last, and fail closed in between
+
+**Status:** Accepted
+
+**Decision:** `deleteAccount(userId)` (`src/features/account/delete.ts`) runs exactly two steps, in this order and never the reverse:
+
+1. Enumerate every file under the `closet` bucket prefix `<userId>/` — paginated to the end (`CLOSET_LIST_PAGE_SIZE = 100`) and recursing into subfolders — then remove them.
+2. `auth.admin.deleteUser(userId)`, whose `on delete cascade` (migration `0001_account_and_closet.sql`) clears `profiles`, `closet_items`, `saved_items`, `saved_outfits`, `saved_styles`.
+
+If step 1 fails for any reason — a `list` error or a `remove` error on any chunk — the function throws `AccountDeletionError('bucket-cleanup')` and step 2 **does not run**. The account survives the failure intact and `DELETE /api/account` says so in those words.
+
+The `userId` the function receives always comes from the session (`getCurrentUserId()`), never from a request body, query string or header. The route handler deliberately declares no `Request` parameter at all.
+
+`src/lib/supabase/admin.ts` is the only app module that reads `SUPABASE_SERVICE_ROLE_KEY`, and its first line is `import 'server-only'`.
+
+**Reason:** Supabase Storage is a separate system from Postgres — `on delete cascade` does not remove a single byte from the bucket. An image path exists in exactly two places: the `closet_items` row (which cascade destroys) and the bucket itself. Deleting the auth user first therefore destroys the only index of files that are still there: private photographs left behind permanently, which no query — and no operator — can locate afterward. A test that inspects only the database passes happily while this is happening, which is why the proof lives in `src/features/account/delete.integration.test.ts` (a real `storage.list` against a real project), not in the unit test.
+
+Failing closed on a partial bucket cleanup follows from the same asymmetry. Stopping with the account intact is a retryable failure — the data is still there, the user presses the button again. Deleting the user over a half-cleaned bucket is an unfixable one. Between "not finished, try again" and "permanently lost track of some private data", the first is strictly better.
+
+Service-role bypasses RLS entirely: none of the twenty policies in migration 0001 is evaluated for that key. The "only yourself" boundary that the database holds for every other route is, here, held by one line of application code. `server-only` is the mechanical guarantee that the key cannot reach a browser: the package resolves to an empty module only under the `react-server` export condition, so any `'use client'` module that pulls `admin.ts` in — directly or transitively — fails `next build`. This was verified by deliberately importing `admin.ts` from a client component and confirming the build error, not assumed.
+
+**Rejected:**
+- A soft-delete flag with the rows and files retained — the product promise is deletion, and a hidden flag is not deletion.
+- Deleting the auth user anyway when bucket cleanup fails partway, so the user "at least gets deleted" — rejected above: it converts a retryable failure into an unrecoverable one.
+- Listing one page of bucket files and stopping — Supabase Storage returns 100 entries by default and will not volunteer the rest; a 120-item closet would silently leave 20 photographs behind.
+- Removing files while paginating — deletion shifts the listing under the `offset` cursor, so entries get skipped. The implementation lists everything first, then removes in chunks.
+
+**Consequences:** `SUPABASE_SERVICE_ROLE_KEY` must be set in the server environment for `/closet/account` to work; without it the route answers 500 with "chưa được cấu hình" rather than pretending to succeed. Vitest runs under the `node` export condition, where `server-only` throws on import, so `vitest.config.mts` aliases it to `test/server-only-stub.ts`; that alias is test-only and `next build` still uses the real package, so the bundle guarantee is unchanged. Any future call site of `deleteAccount` inherits the full force of the service-role key and must derive its `userId` from the session the same way.
+
+---
+
 ## Template for new decisions
 
 ```text

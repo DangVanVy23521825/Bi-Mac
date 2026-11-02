@@ -40,6 +40,16 @@ export default function ClosetPage() {
           Thử AI phối đồ
         </Link>
       </div>
+      {/* Đường ra, để ở cuối và tách khỏi hàng trên: không giấu đi, cũng
+          không bày ngang hàng với những việc người ta vào đây để làm. */}
+      <div className="mt-16 border-t border-muted/40 pt-8">
+        <Link
+          href="/closet/account"
+          className="font-body text-sm text-accent-soft underline underline-offset-4 hover:text-accent"
+        >
+          Tài khoản và xoá tài khoản
+        </Link>
+      </div>
     </div>
   )
 }
