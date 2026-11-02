@@ -38,6 +38,8 @@
 // Runtime stays the Node.js default — do not set `runtime = 'edge'`.
 // Streaming works fine on Node, and Edge is deprecated on this platform.
 
+import { after } from 'next/server'
+
 import { allColors, allItems, allOutfits, allStyles } from '@/data'
 import { savePreferences } from '@/features/account/preferences'
 import { listClosetItems } from '@/features/closet/repository'
@@ -278,12 +280,25 @@ async function resolveClosetImages(
 //
 // `userId` is only used to fire off `savePreferences` once the pipeline
 // resolves — `null` for a signed-out caller, who has nothing to save
-// preferences against. That call is deliberately *not* awaited: Task 12's
-// product rule is that remembering a questionnaire answer must never delay
-// or break the response the caller is actually waiting on, and
+// preferences against. That call is deliberately *not* awaited inline:
+// Task 12's product rule is that remembering a questionnaire answer must
+// never delay or break the response the caller is actually waiting on, and
 // `savePreferences` (`src/features/account/preferences.ts`) already
 // swallows every failure of its own, so there is nothing useful to await
 // here anyway.
+//
+// It is scheduled via `after()` (`next/server`), not a bare `void` call,
+// so it survives past the point the response has finished streaming:
+// Vercel is free to freeze or tear down an invocation once its response is
+// fully sent, and a still-pending Supabase write kicked off with a bare
+// `void` is not guaranteed to finish in that window — `after()` exists
+// specifically to give background work like this a durability guarantee
+// the response itself doesn't need. `after()` throws when called outside
+// a real Next.js request-dispatch scope, which is exactly what
+// `route.test.ts` does (it calls `POST()` directly, not through the
+// framework), so the `catch` falls back to the original bare
+// fire-and-forget call there — same behaviour this route always had,
+// preserved for the one context where `after()` cannot run.
 function createStylistStream(
   input: StylistInput,
   deps: StylistDeps,
@@ -306,11 +321,18 @@ function createStylistStream(
       runStylist(input, streamingDeps)
         .then(async (outcome) => {
           if (userId) {
-            // Fire-and-forget — see the function's doc comment. A signed-in
-            // caller just completed a stylist turn with validated answers;
-            // remembering them for next time must never hold up this
-            // response or fail loudly if it doesn't land.
-            void savePreferences(userId, input.answers)
+            // See the function's doc comment: `after()` keeps this write
+            // alive past the response finishing, with a bare fire-and-forget
+            // fallback for the one context (`route.test.ts`'s direct
+            // `POST()` calls) where `after()` has no request scope to run
+            // in. A signed-in caller just completed a stylist turn with
+            // validated answers; remembering them for next time must never
+            // hold up this response or fail loudly if it doesn't land.
+            try {
+              after(() => savePreferences(userId, input.answers))
+            } catch {
+              void savePreferences(userId, input.answers)
+            }
           }
 
           const closetItems = await resolveClosetImages(outcome.closetItems, closetImagePathById)

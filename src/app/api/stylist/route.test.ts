@@ -113,6 +113,17 @@ vi.mock('@/features/closet/images', () => ({
   signClosetImage: signClosetImageMock,
 }))
 
+// Task 12 (Review finding IMPORTANT 1): `savePreferences` is mocked so the
+// tests below can assert it was actually called — including through the
+// `after()` fallback path — without needing a real Supabase write. Default
+// resolves to `undefined`, matching `savePreferences`'s real contract of
+// never throwing.
+const { savePreferencesMock } = vi.hoisted(() => ({ savePreferencesMock: vi.fn() }))
+
+vi.mock('@/features/account/preferences', () => ({
+  savePreferences: savePreferencesMock,
+}))
+
 import { MAX_PHOTO_BYTES, PER_IP_LIMIT, POST } from './route'
 
 const validAnswers = JSON.stringify({
@@ -170,6 +181,7 @@ describe('POST /api/stylist', () => {
     createSupabaseServerClientMock.mockReset().mockResolvedValue(null)
     listClosetItemsMock.mockReset().mockResolvedValue([])
     signClosetImageMock.mockReset().mockResolvedValue(null)
+    savePreferencesMock.mockReset().mockResolvedValue(undefined)
   })
 
   it('trả 400 khi answers không hợp schema', async () => {
@@ -488,6 +500,42 @@ describe('POST /api/stylist', () => {
       expect(result.closetItems.length).toBeLessThanOrEqual(5)
       expect(result.closetItems.length).toBeGreaterThan(0)
       expect(signClosetImageMock).toHaveBeenCalledTimes(result.closetItems.length)
+    })
+  })
+
+  // Task 12 (Review finding IMPORTANT 1): `savePreferences` is scheduled via
+  // `after()` so the write survives past the response finishing on a real
+  // platform, with a bare fire-and-forget `catch` fallback for exactly this
+  // test file — `POST()` is called directly here, not through Next's
+  // request-dispatch pipeline, so `after()` has no request scope to run in
+  // and throws synchronously every time. These tests pin that the `catch`
+  // branch still calls `savePreferences` itself (not just swallowing the
+  // `after()` throw and doing nothing), so a future reader cannot "simplify"
+  // the try/catch away without a test failing.
+  describe('savePreferences sau lượt stylist', () => {
+    it('đã đăng nhập thì gọi savePreferences qua nhánh fallback (after() không có request scope ở đây)', async () => {
+      const userId = 'user-prefs'
+      getCurrentUserIdMock.mockResolvedValue(userId)
+      createSupabaseServerClientMock.mockResolvedValue({})
+
+      const res = await POST(formRequest({ answers: validAnswers }))
+      expect(res.status).toBe(200)
+      await ndjson(res)
+
+      expect(savePreferencesMock).toHaveBeenCalledTimes(1)
+      expect(savePreferencesMock).toHaveBeenCalledWith(
+        userId,
+        expect.objectContaining({ occasions: ['casual'], goal: 'outfits' }),
+      )
+    })
+
+    it('chưa đăng nhập thì không gọi savePreferences', async () => {
+      getCurrentUserIdMock.mockResolvedValue(null)
+
+      const res = await POST(formRequest({ answers: validAnswers }))
+      await ndjson(res)
+
+      expect(savePreferencesMock).not.toHaveBeenCalled()
     })
   })
 })
