@@ -41,7 +41,16 @@ const ERROR_MESSAGES: Record<AccountDeletionReason, string> = {
   // được giữ nguyên có chủ đích (xem `delete.ts`), và người dùng cần biết
   // chính xác điều đó thay vì phải đoán xem mình đã bị xoá một nửa hay chưa.
   'bucket-cleanup': 'Chưa xoá được ảnh trong tủ đồ nên tài khoản của bạn vẫn còn nguyên. Vui lòng thử lại.',
-  'auth-delete': GENERIC_ERROR,
+  // `auth-delete` chỉ xảy ra **sau** khi dọn bucket đã xong, nên nó là
+  // trạng thái nửa vời duy nhất mà hàm này tạo ra được: ảnh đã mất hẳn,
+  // trong khi tài khoản, hàng `closet_items` và những `image_path` giờ trỏ
+  // vào hư không thì vẫn còn. Dùng GENERIC_ERROR ở đây là nói sai đúng nửa
+  // quan trọng: người đọc "chưa xoá được tài khoản, thử lại sau" sẽ tưởng
+  // không có gì xảy ra, rồi nếu đổi ý ở lại thì thấy một cái tủ đồ mất hết
+  // ảnh mà không ai giải thích (`createSignedUrl` không còn gì để ký).
+  // Nên nó có chuỗi riêng, đối xứng với sự thật thà của `bucket-cleanup`.
+  'auth-delete':
+    'Ảnh trong tủ đồ của bạn đã được xoá vĩnh viễn, nhưng tài khoản thì chưa xoá xong. Vui lòng thử lại để hoàn tất — những ảnh đó không khôi phục lại được nữa.',
 }
 
 function jsonResponse(status: number, body: Record<string, unknown>): Response {

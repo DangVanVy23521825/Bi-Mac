@@ -21,7 +21,7 @@ const { createSupabaseAdminClient } = vi.hoisted(() => ({
 vi.mock('@/lib/supabase/admin', () => ({ createSupabaseAdminClient }))
 
 // Import sau mock: `admin.ts` có `import 'server-only'` và dựng client thật.
-import { AccountDeletionError, CLOSET_LIST_PAGE_SIZE, deleteAccount } from './delete'
+import { AccountDeletionError, CLOSET_LIST_PAGE_SIZE, MAX_LIST_PAGES, deleteAccount } from './delete'
 
 const USER = 'user-aaa'
 
@@ -42,6 +42,11 @@ type FakeOptions = {
   listError?: { message: string } | null
   removeError?: { message: string } | null
   deleteUserError?: { message: string } | null
+  /**
+   * Mô phỏng một API bỏ qua `offset`: mọi trang đều dài đủ `limit`, mãi mãi.
+   * Đây đúng là hình dạng lỗi mà chặn trên phải bắt.
+   */
+  infinitePages?: boolean
 }
 
 function fakeAdmin(options: FakeOptions = {}) {
@@ -51,6 +56,10 @@ function fakeAdmin(options: FakeOptions = {}) {
   const list = vi.fn(async (prefix: string, params: { limit: number; offset: number }) => {
     calls.push(`list:${prefix}@${params.offset}`)
     if (options.listError) return { data: null, error: options.listError }
+    if (options.infinitePages) {
+      const page = Array.from({ length: params.limit }, (_, i) => file(`p${params.offset}-${i}.png`))
+      return { data: page, error: null }
+    }
     const pages = listing[prefix] ?? [[]]
     const page = pages.shift() ?? []
     return { data: page, error: null }
@@ -196,6 +205,46 @@ describe('deleteAccount', () => {
     })
 
     expect(await reasonOf(deleteAccount(USER))).toBe('auth-delete')
+  })
+
+  it('dừng lại thay vì lặp vô hạn khi list không tôn trọng offset', async () => {
+    // Vòng lặp liệt kê chỉ thoát khi gặp một trang ngắn. Nếu `offset` bị bỏ
+    // qua thì không bao giờ có trang ngắn — và chỗ chạy là một route
+    // handler, nên hậu quả là treo request + phình bộ nhớ, không phải một
+    // lỗi nhìn thấy được. Chặn trên biến nó thành `bucket-cleanup`, tức là
+    // fail closed: tài khoản còn nguyên.
+    const admin = fakeAdmin({ infinitePages: true })
+
+    expect(await reasonOf(deleteAccount(USER))).toBe('bucket-cleanup')
+    expect(admin.list).toHaveBeenCalledTimes(MAX_LIST_PAGES)
+    expect(admin.remove).not.toHaveBeenCalled()
+    expect(admin.deleteUser).not.toHaveBeenCalled()
+  })
+
+  it('giữ lại lỗi gốc của Supabase trong `cause` ở cả ba nhánh', async () => {
+    // Không có `cause`, nhánh fail closed không chẩn đoán được: "bucket
+    // không tồn tại", "key bị thu hồi", "rate limit" và "503 thoáng qua"
+    // cùng hiện ra một câu tiếng Việt. Chuỗi lỗi phải sống sót tới chỗ gọi.
+    const listError = { message: 'Bucket not found' }
+    fakeAdmin({ listError })
+    await expect(deleteAccount(USER)).rejects.toMatchObject({
+      reason: 'bucket-cleanup',
+      cause: listError,
+    })
+
+    const removeError = { message: 'rate limited' }
+    fakeAdmin({ listing: { [USER]: [[file('ao.png')]] }, removeError })
+    await expect(deleteAccount(USER)).rejects.toMatchObject({
+      reason: 'bucket-cleanup',
+      cause: removeError,
+    })
+
+    const deleteUserError = { message: 'service unavailable' }
+    fakeAdmin({ listing: { [USER]: [[file('ao.png')]] }, deleteUserError })
+    await expect(deleteAccount(USER)).rejects.toMatchObject({
+      reason: 'auth-delete',
+      cause: deleteUserError,
+    })
   })
 
   it('không nhét dữ liệu cá nhân vào thông điệp lỗi', async () => {

@@ -28,6 +28,18 @@
 // "chưa xong, thử lại" và "mất kiểm soát vĩnh viễn một phần dữ liệu riêng
 // tư", chọn cái thứ nhất.
 //
+// ── Và nếu bước 2 hỏng ───────────────────────────────────────────────────
+//
+// `auth-delete` là trạng thái nửa vời **duy nhất** hàm này tạo ra được, vì
+// nó chỉ tới được sau khi bucket đã sạch: ảnh mất hẳn, trong khi tài khoản,
+// hàng `closet_items` và những `image_path` giờ trỏ vào hư không thì vẫn
+// còn. Không có cách nào quay lại — ảnh đã xoá là đã xoá. Thứ duy nhất làm
+// đúng được ở đây là nói thật và nói đủ, nên `reason` này có thông điệp
+// riêng trong `src/app/api/account/route.ts` thay vì dùng câu chung: một
+// người đọc "chưa xoá được tài khoản" rồi đổi ý ở lại sẽ gặp một cái tủ đồ
+// trống ảnh mà không ai giải thích. Thử lại là đường đi đúng, và nó hoàn
+// tất được (bước 1 trên một bucket đã rỗng là một no-op).
+//
 // ── Ranh giới "chỉ chính mình" ───────────────────────────────────────────
 //
 // Hàm này chạy bằng service-role key, tức là RLS không còn chặn gì — nó đi
@@ -55,14 +67,45 @@ const BUCKET = 'closet'
  */
 export const CLOSET_LIST_PAGE_SIZE = 100
 
+/**
+ * Chặn trên số trang mỗi prefix (100 000 file — xa hơn mọi tủ đồ thật).
+ *
+ * Vòng lặp liệt kê thoát khi gặp một trang ngắn. `@supabase/storage-js`
+ * hiện chuyển thẳng `{ limit, offset }` xuống API nên nó thoát đúng — nhưng
+ * đó là hành vi của một thư viện, không phải một bất biến, và hệ quả nếu
+ * sai thì tệ hơn mức bình thường: `offset` bị bỏ qua nghĩa là mọi trang dài
+ * y như nhau, và vòng lặp chạy mãi **ngay trong một route handler** — treo
+ * request rồi phình bộ nhớ bằng đường dẫn trùng lặp, chứ không phải một lỗi
+ * nhìn thấy được. Chặn trên biến trường hợp đó thành `bucket-cleanup`: fail
+ * closed, có tên, và tài khoản vẫn còn nguyên.
+ */
+export const MAX_LIST_PAGES = 1_000
+
 export type AccountDeletionReason = 'missing-service-role' | 'bucket-cleanup' | 'auth-delete'
 
 export class AccountDeletionError extends Error {
   readonly reason: AccountDeletionReason
 
-  constructor(reason: AccountDeletionReason) {
-    // Thông điệp là hằng số, không nội suy id hay đường dẫn nào vào.
-    super(`account-delete-${reason}`)
+  /**
+   * `cause` giữ lại nguyên lỗi gốc của Supabase. Không có nó, nhánh fail
+   * closed trở thành không chẩn đoán được: "bucket không tồn tại", "service
+   * key bị thu hồi", "rate limit" và "503 thoáng qua" cùng hiện ra đúng một
+   * câu tiếng Việt, và lời khuyên "đi sửa Storage" không có gì chứng minh
+   * Storage mới là chỗ hỏng.
+   *
+   * Hai điều kiện để nó không vi phạm ADR-012, và cả hai phải được giữ:
+   *  - Route **không** serialize error ra client; nó map `reason` sang một
+   *    hằng số viết sẵn (`src/app/api/account/route.ts`).
+   *  - Không ai được log `cause.message` một cách hồn nhiên. Lỗi của
+   *    Supabase Storage có thể nhúng object key vào thông điệp, và object
+   *    key chính là một đường dẫn ảnh. Chuỗi `cause` tồn tại để một lớp
+   *    observability sau này *có cái mà xử lý*, không phải để in ra.
+   *
+   * `message` của chính class này vẫn là hằng số, không nội suy id hay
+   * đường dẫn nào vào.
+   */
+  constructor(reason: AccountDeletionReason, cause?: unknown) {
+    super(`account-delete-${reason}`, { cause })
     this.name = 'AccountDeletionError'
     this.reason = reason
   }
@@ -87,12 +130,16 @@ async function listFilePaths(admin: SupabaseClient, prefix: string): Promise<str
   const files: string[] = []
   const folders: string[] = []
 
-  for (let offset = 0; ; ) {
+  for (let offset = 0, page = 0; ; page += 1) {
+    if (page >= MAX_LIST_PAGES) {
+      throw new AccountDeletionError('bucket-cleanup', new Error('closet-list-page-cap'))
+    }
+
     const { data, error } = await admin.storage
       .from(BUCKET)
       .list(prefix, { limit: CLOSET_LIST_PAGE_SIZE, offset })
 
-    if (error) throw new AccountDeletionError('bucket-cleanup')
+    if (error) throw new AccountDeletionError('bucket-cleanup', error)
 
     const entries = data ?? []
     for (const entry of entries) {
@@ -125,7 +172,7 @@ async function emptyUserFolder(admin: SupabaseClient, userId: string): Promise<v
       .from(BUCKET)
       .remove(paths.slice(i, i + CLOSET_LIST_PAGE_SIZE))
 
-    if (error) throw new AccountDeletionError('bucket-cleanup')
+    if (error) throw new AccountDeletionError('bucket-cleanup', error)
   }
 }
 
@@ -139,5 +186,5 @@ export async function deleteAccount(userId: string): Promise<void> {
 
   // 2. Rồi mới tới auth user — `on delete cascade` dọn nốt năm bảng.
   const { error } = await admin.auth.admin.deleteUser(userId)
-  if (error) throw new AccountDeletionError('auth-delete')
+  if (error) throw new AccountDeletionError('auth-delete', error)
 }

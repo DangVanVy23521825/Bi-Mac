@@ -128,6 +128,34 @@ describe('DELETE /api/account', () => {
     expect(String(body.error)).toContain('vẫn còn nguyên')
   })
 
+  it('500 khi xoá auth user thất bại: nói rõ ảnh đã mất, không dùng câu chung', async () => {
+    // `auth-delete` chỉ tới được **sau** khi bucket đã sạch, nên ảnh của
+    // người dùng đã mất hẳn trong khi tài khoản vẫn còn. Câu chung ("chưa
+    // xoá được tài khoản, thử lại sau") nói sai đúng nửa quan trọng: người
+    // đổi ý ở lại sẽ gặp một tủ đồ trống ảnh mà không ai giải thích.
+    deleteAccount.mockRejectedValue(new AccountDeletionError('auth-delete'))
+
+    const res = await handler(request())
+    expect(res.status).toBe(500)
+    const authDelete = String((await json(res)).error)
+
+    expect(authDelete).toContain('đã được xoá vĩnh viễn')
+    expect(authDelete).toContain('chưa xoá xong')
+
+    // Ghim: không được âm thầm quay về `GENERIC_ERROR`. So trực tiếp với
+    // thông điệp của một lỗi lạ — đổi lại thành câu chung là hai chuỗi bằng
+    // nhau và test đỏ ngay.
+    deleteAccount.mockRejectedValue(new Error('lỗi lạ'))
+    const generic = String((await json(await handler(request()))).error)
+    expect(authDelete).not.toBe(generic)
+
+    // Và cũng không được dùng lẫn với câu của `bucket-cleanup`, vốn nói
+    // điều ngược lại (tài khoản còn nguyên).
+    deleteAccount.mockRejectedValue(new AccountDeletionError('bucket-cleanup'))
+    const bucket = String((await json(await handler(request()))).error)
+    expect(authDelete).not.toBe(bucket)
+  })
+
   it('500 khi deleteAccount ném lỗi lạ', async () => {
     deleteAccount.mockRejectedValue(new Error('bất ngờ'))
 

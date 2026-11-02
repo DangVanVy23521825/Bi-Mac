@@ -13,6 +13,14 @@
 //   2. Nút xoá thật bị khoá cho tới khi gõ đúng một từ. Không phải checkbox:
 //      checkbox bấm nhầm được, gõ một từ thì không.
 //
+// Một chữ về câu "chúng tôi không giữ lại bản sao nào để dùng về sau":
+// nó cố tình **không** phải "không có bản sao nào được giữ lại". Lời thứ hai
+// là một khẳng định về hạ tầng — PITR của Postgres, bản backup, retention
+// của Storage — mà code ở đây không hứa thay được, và
+// `docs/07_SECURITY_PRIVACY.md` là tài liệu chi phối màn hình này. Một lời
+// hứa riêng tư mà hệ thống không giữ được thì tệ hơn một lời hứa hẹp mà
+// đúng. Đừng "làm cho nó mạnh hơn".
+//
 // Từ xác nhận được so sau khi bỏ dấu và viết hoa (`XOÁ`, `xoa`, `Xóa` đều
 // được tính). Bắt gõ đúng dấu bằng một bộ gõ tiếng Việt là dựng rào với
 // chính người dùng chứ không phải với cú bấm nhầm — mà cú bấm nhầm thì đã
@@ -88,7 +96,7 @@ export function DeleteAccountPanel() {
         <p className="font-body text-base text-accent-soft">
           Bạn có thể rời khỏi Bí Mặc bất cứ lúc nào. Khi bạn xoá tài khoản, chúng tôi xoá thật:
           toàn bộ ảnh quần áo bạn đã tải lên, những món và look bạn đã lưu, cùng mọi câu trả lời
-          bạn từng đưa cho AI phối đồ. Không có bản sao nào được giữ lại.
+          bạn từng đưa cho AI phối đồ. Chúng tôi không giữ lại bản sao nào để dùng về sau.
         </p>
         <button
           type="button"
