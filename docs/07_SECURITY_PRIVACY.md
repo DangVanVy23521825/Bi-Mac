@@ -1,8 +1,18 @@
 # 07 — Security & Privacy
 
-> **Superseded in part by** `docs/superpowers/specs/2026-10-03-bi-mac-direction-design.md`
-> (ADR-012). Read the spec before following this document. User photos are not stored
-> anywhere, and there is no storage bucket in v1.
+> **Superseded in part by** ADR-012 and ADR-028. Two different kinds of user
+> photo now exist, with two different rules — read ADR-028 before following
+> this document's "User photos" section below:
+>
+> - The AI Stylist's optional **body photo** is never stored anywhere, in a
+>   bucket or otherwise (ADR-012, unchanged) — received in the request, sent
+>   to the model, discarded.
+> - The personal closet's **garment photos** (added in
+>   `docs/superpowers/specs/2026-10-31-tu-do-ca-nhan-design.md`) ARE stored,
+>   in the private `closet` Supabase Storage bucket, which is exactly what the
+>   "User photos" section below already specifies — that section describes
+>   the garment-photo case correctly; it just predates the distinction and
+>   reads as if it covered both.
 
 ## Baseline
 

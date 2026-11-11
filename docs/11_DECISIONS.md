@@ -88,7 +88,7 @@ Record durable decisions here. Keep entries concise.
 
 ## ADR-009 — Product goal is a portfolio piece for freelance/client audiences
 
-**Status:** Accepted
+**Status:** Accepted — superseded by ADR-024, which records the product's goal as real end users, not a portfolio audience.
 
 **Decision:** The product goal is a portfolio artifact. Its audience is freelance prospects and potential clients evaluating the author's work, not end users of a fashion product.
 
@@ -98,7 +98,7 @@ Record durable decisions here. Keep entries concise.
 
 ## ADR-010 — My Closet v1 requires no login
 
-**Status:** Accepted
+**Status:** Accepted — superseded by ADR-025, which requires sign-in for My Closet; the `localStorage` path described below was never implemented.
 
 **Decision:** My Closet v1 saves items/looks/styles to `localStorage` and does not require authentication. Amends the Authentication section of `docs/01_PRD.md`, which previously required auth for persistent saves.
 
@@ -123,6 +123,8 @@ Record durable decisions here. Keep entries concise.
 **Decision:** User photos uploaded to the AI Stylist are not persisted anywhere. They are received in the request, sent to Gemini, and discarded; there is no bucket, no signed URL, and no storage lifecycle to manage. This amends ADR-005, which specified a private storage bucket.
 
 **Reason:** Not storing the photo at all is a stronger privacy posture than a private bucket, and it removes Supabase Storage from the v1 build entirely.
+
+**Note:** Extended by ADR-028 — this decision stands unchanged for the AI Stylist's body photo, but a second, different kind of photo (the personal closet's garment photos) now exists and IS stored, in a private bucket. Read ADR-028 before citing this entry for "user photos" in general; it no longer covers both kinds.
 
 ---
 
@@ -266,6 +268,99 @@ Service-role bypasses RLS entirely: none of the twenty policies in migration 000
 - Removing files while paginating — deletion shifts the listing under the `offset` cursor, so entries get skipped. The implementation lists everything first, then removes in chunks.
 
 **Consequences:** `SUPABASE_SERVICE_ROLE_KEY` must be set in the server environment for `/closet/account` to work; without it the route answers 500 with "chưa được cấu hình" rather than pretending to succeed. Vitest runs under the `node` export condition, where `server-only` throws on import, so `vitest.config.mts` aliases it to `test/server-only-stub.ts`; that alias is test-only and `next build` still uses the real package, so the bundle guarantee is unchanged. Any future call site of `deleteAccount` inherits the full force of the service-role key and must derive its `userId` from the session the same way.
+
+---
+
+## ADR-023 — Three catalog pages became dynamic once accounts needed per-request cookies; accepted, not solved
+
+**Status:** Accepted (as an accepted cost — see Reason)
+
+**Decision:** `/stylist`, `/wardrobe/[category]/[slug]`, and `/styles/[slug]` now render per request for every visitor — signed in or not — whenever Supabase is configured, where before this plan they were static. The mechanism is the same in all three: `/stylist` (`src/app/stylist/page.tsx`) calls `getCurrentUserId()` to decide whether to pre-fill the questionnaire from a remembered profile; `/wardrobe/[category]/[slug]` and `/styles/[slug]` both call `getAuthState()` to decide whether to show the save control. Every one of those calls goes through `createSupabaseServerClient()` (`src/lib/supabase/server.ts`), and that function calls `cookies()` from `next/headers` — reading the incoming request's cookies is itself what tells Next.js a route cannot be prerendered once, ahead of time, and served the same to everyone. Two independent task reviews on this branch flagged the same page-by-page symptom before this was recognized as one thing; it is recorded here as a single branch-wide decision rather than three local fixes.
+
+**Reason:** The three pages need `cookies()` for a real reason, not an accidental one — a save button that doesn't know whether to say "lưu" or "đã lưu", and a questionnaire that doesn't know whether to pre-fill, are both genuinely request-dependent on who's asking. There is no version of "does this visitor have a session" that doesn't read a cookie. Given that, the alternatives are real trade-offs, not free wins, which is why this is written down as an accepted cost rather than closed as solved:
+- **Client-side fetch after mount** — ship the static shell, then fetch auth state from the browser and swap in the save control/pre-fill once it resolves. Keeps the page statically cacheable, but trades it for a visible pop-in on every load and a second network round-trip the server-rendered version didn't need.
+- **A Suspense/PPR boundary** — wrap just the auth-dependent fragment (the save button, the pre-fill) in a boundary that the rest of the static page doesn't wait on. This is the structurally correct fix, but it's a non-trivial restructuring of three pages' rendering boundaries, not a configuration flag, and it was out of scope for the task that found this.
+
+Neither alternative was implemented. The current behavior is correct and tested — it is a cost (every visit to these three pages now does a cookie read and a Supabase round-trip that a cached static page would have skipped), not a bug, and it should be revisited with one of the two alternatives above if these pages' load latency or server cost becomes a problem worth the restructuring.
+
+**Rejected:** closing this as "working as intended" without writing down the trade-off — that would read, to the next person touching these pages, as if nobody had noticed the regression from static to dynamic, when in fact it was noticed twice and deliberately left as the cheaper option for this plan's scope.
+
+**Consequences:** any future page that calls `getAuthState()`, `requireUserId()`, or any function that transitively calls `createSupabaseServerClient()` takes on the same cost and should expect to render dynamically when Supabase is configured. A future task that cares about static-shell latency on these three routes specifically should start from the Suspense/PPR option above, not reinvent a third approach.
+
+---
+
+## ADR-024 — Product goal is a real product for users, not a portfolio piece
+
+**Status:** Accepted — supersedes ADR-009
+
+**Decision:** Bí Mặc's goal is a real product for end users — people who sign in, build a personal closet of their own photographed clothes, and get AI Stylist recommendations grounded in those clothes — not a two-minute, no-login demo whose audience is freelance prospects evaluating the author's work. When the product needs to be shown to a client, the demo signs in beforehand; a no-login demo path is no longer a requirement anything else has to protect. This supersedes ADR-009, whose "portfolio piece" framing explicitly called itself "the root decision; every other priority ... is derived from it." Recorded against `docs/superpowers/specs/2026-10-31-tu-do-ca-nhan-design.md` §1.
+
+**Reason:** This is the owner's decision, not an inference from the code — §1 of the design spec states the change directly: the project accepted the trade-off of losing the no-login two-minute demo in exchange for building toward a real product, with a longer-term destination (a memory-and-tool-using chat agent that styles outfits from the user's actual closet) that has no path to existing without real accounts and real personal data first. Tasks 1–13 of this plan (Google OAuth, `closet_items`, per-user RLS, remembered questionnaire answers, account deletion) are built on this new root. Recording the change here, rather than leaving ADR-009 standing, keeps the decision log from contradicting what the repository now actually is.
+
+**Consequences:** every decision ADR-009 said was derived from the portfolio framing must be re-examined against the new root, not assumed to still hold. ADR-010 was the clearest case — see ADR-025.
+
+---
+
+## ADR-025 — My Closet requires sign-in; no `localStorage` path
+
+**Status:** Accepted — supersedes ADR-010
+
+**Decision:** My Closet (`/closet` and its `/closet/{items,looks,styles}` children) requires an authenticated Supabase session, gated structurally by ADR-021's `(account)` route group. There is no `localStorage`-based save path: ADR-010 described one, but nothing in `src/` before this plan ever implemented it — grep for a `localStorage` call against saves at the start of this plan found none. Nothing is being removed in code by this decision; the thing being superseded is the stated plan for a no-login save path, not shipped behavior. This supersedes ADR-010. The "auth-to-save" section of `docs/01_PRD.md` that ADR-010 had overridden is back in force.
+
+**Reason:** follows directly from ADR-024. A personal closet of a user's own photographed garments is inherently per-account data in a way a bookmarked catalog item never was: there is no meaningful anonymous, device-local version of "the clothes I photographed last week" that survives a cleared browser, works from a second device, or keeps anyone else from reading someone else's clothing photos. ADR-010's justification — "a login form kills a two-minute portfolio demo" — is exactly the premise ADR-024 retired.
+
+**Consequences:** a signed-out visitor who follows the nav to "Tủ đồ của tôi" sees a one-line explanation plus a sign-in control (ADR-021's layout-level gate), not a working no-login demo and not a bare redirect.
+
+---
+
+## ADR-026 — Saved Bí Mặc catalog items reference slugs as text, not foreign keys
+
+**Status:** Accepted
+
+**Decision:** `saved_items`, `saved_outfits`, and `saved_styles` store the catalog slug as plain text (`item_slug`, `outfit_slug`, `style_slug` respectively) under a `unique (user_id, slug)` constraint, not as a foreign key into a `fashion_items`/`outfits`/`styles` table in Postgres. `docs/04_DATA_MODEL.md`'s original design assumed such catalog tables would exist in Postgres; they do not — the catalog is still TypeScript fixtures in `src/data/fixtures/`. Validity is enforced in the application layer against those fixtures, in two different directions for two different reasons: writing (`toggleSaved*` in `src/features/closet/saved.ts`) rejects a slug that doesn't exist in the fixtures before inserting a row; reading (`listSaved*`) maps a stored row to its fixture record and silently drops it — no thrown error, no placeholder — when that lookup misses.
+
+**Reason:** migrating the entire catalog into Postgres is a separate, larger project (explicitly out of scope per `docs/superpowers/specs/2026-10-31-tu-do-ca-nhan-design.md` §3) that does nothing to serve this plan's actual goal of a working personal closet and account system. Real foreign-key integrity was never reachable without that migration, so choosing text-plus-app-validation is not a shortcut taken instead of a "proper" foreign key — a foreign key had no table to point at.
+
+**Consequences:** a database row can legitimately point at a slug that has since been removed from the fixtures (e.g. a catalog item retired in a later milestone). Every read path must treat a lookup miss as "not found, skip" rather than a data-integrity error — this is Review Focus #4 in `src/features/closet/saved.ts`'s own comments, not an incidental choice. A future migration of the catalog into Postgres must also decide what happens to this slug-text scheme at that point — either backfill real foreign keys or explicitly decide to keep slugs — rather than leaving it unaddressed.
+
+---
+
+## ADR-027 — Garment photos are labelled by AI first; the user edits, and the edit is tracked
+
+**Status:** Accepted
+
+**Decision:** Adding a garment to the personal closet uploads a photo, then calls an AI tagger (`src/lib/ai/tagger.ts`; `tagger-gemini.ts` primary, `tagger-deterministic.ts` fallback) that returns a draft label — name, category, colors, styles, occasions, fit, attributes — constrained to the same enum vocabulary the catalog and the AI Stylist ranker already use (`CategorySlug`, `Occasion`, `Fit`, `ItemAttribute`, and the real color/style slug lists). The user reviews that pre-filled draft and corrects whatever is wrong before saving; there is no path that saves a label without that review screen. `closet_items.label_source` (`'ai' | 'user'`) records which one produced the label currently stored: a freshly-tagged draft starts as `'ai'`, and flips to `'user'` the moment the person editing changes any field by hand (`AddItemForm.tsx`'s `updateDraft`). With no API key configured, or a model error/timeout, the route still answers 200 with an all-but-empty draft and a `degradedReason` — never an error that blocks adding the item.
+
+**Reason:** an empty closet defeats the entire feature — this is named directly as an anti-goal in the design spec (§3): if adding one item required filling out a long form from nothing, users would abandon partway, and the AI Stylist would have nothing of the user's own to rank. A pre-filled, still-editable draft is the shape that keeps the form fast while still guaranteeing a human looks at every label before it's trusted — "AI fills it in, a person is still the one who saves it" is the whole point, not a convenience on top of it. `label_source` is not decorative: a later project (the memory-and-tool chat agent, out of scope for this plan) will need to tell confirmed labels apart from AI guesses that were never reviewed, to know what's safe to ask the user about again rather than trust blindly.
+
+**Consequences:** the tagger's output is Zod-validated against the same closed enum vocabulary the database's check constraints also enforce (`supabase/migrations/0001_account_and_closet.sql`), the same discipline ADR-018 already established for the AI Stylist's own output — a model cannot invent a category or color the catalog doesn't have. The labelling endpoint (`/api/closet/tag`) carries its own per-user daily quota stored in Postgres (`src/features/closet/quota.ts`, migration `0002_ai_usage.sql`), deliberately not the in-memory limiter in `src/lib/rate-limit/` that the AI Stylist route uses — a per-account cost control has to survive instance restarts and be shared across instances on a multi-instance platform, which `src/lib/rate-limit/index.ts`'s own documented limitation says an in-memory counter cannot do.
+
+---
+
+## ADR-028 — Garment photos are stored in a private bucket; body photos sent to the AI Stylist are still never stored
+
+**Status:** Accepted — extends ADR-012
+
+**Decision:** ADR-012 stated, without qualification, that "user photos are never stored." That blanket claim is no longer true for one of the two kinds of photo this product now handles, and the two must not be read as the same thing:
+
+- **Garment photos** — a picture of a piece of clothing, uploaded to build the personal closet — ARE stored, in the private `closet` Supabase Storage bucket, at a path `<user_id>/<file>` that a storage RLS policy ties to the uploader via `storage.foldername(name)` (migration `0001_account_and_closet.sql`). The browser never receives a public URL; every read goes through a short-lived signed URL generated server-side (`signClosetImage`, `src/features/closet/images.ts`).
+- **Body photos** — the optional picture of the user sent to the AI Stylist questionnaire, used to ground the style/palette analysis — are NOT stored. ADR-012's original decision stands unchanged here: received in the request, sent to the model, discarded; no bucket, no signed URL, no lifecycle to manage.
+
+**Reason:** these are different kinds of data serving different purposes, and conflating them would understate the privacy guarantee on one and overstate it on the other. A garment photo has to persist — that is the entire point of a personal closet the AI Stylist can rank against on a return visit — so "never store it" was never a guarantee compatible with that feature existing; a private bucket with an RLS-enforced path and server-only signed URLs is the strongest persistence posture available for data that must persist. A body photo has no such reason to outlive the single request it was sent for, so ADR-012's original, stronger guarantee — it is never written anywhere at all — still holds, and matters more here, not less: it is a photograph of a person, not of an object, and `docs/07_SECURITY_PRIVACY.md`'s ban on inferring sensitive personal characteristics from it would be far harder to make credible if the photo itself were sitting in storage somewhere.
+
+**Consequences:** a reader of ADR-012 alone, without this entry, would now draw the wrong conclusion about garment photos — this entry is the correction. `docs/07_SECURITY_PRIVACY.md` and CLAUDE.md's privacy baseline ("never make user photos public by default") apply to both kinds of photo, satisfied by different mechanisms: a body photo satisfies it by not existing past the request; a garment photo satisfies it via bucket privacy + storage RLS + signed URLs that expire. Account deletion (ADR-022) is the garment photo's only designed way to stop existing, which is exactly why that ADR requires the bucket cleanup to run before the auth user is deleted, not after.
+
+---
+
+## ADR-029 — Accounts and the personal closet must not break the no-credentials baseline
+
+**Status:** Accepted
+
+**Decision:** every module this plan added to or around the Supabase seam — `src/lib/supabase/env.ts`, `server.ts`, `client.ts`, `session.ts`, `src/features/account/guard.ts`, the closet repository and labelling route, the account-deletion route — degrades to `null` or a safe, explicitly-handled default instead of throwing when Supabase isn't configured, continuing the contract the seam already held before this plan. Concretely: `getAuthState()` returns `{status: 'unconfigured'}` rather than throwing; `/closet` renders an inline "chưa cấu hình" message instead of crashing or redirecting; the AI Stylist's catalog-only path runs exactly as it did before this plan when there is no session to read personal closet items from. `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all pass with zero Supabase environment variables and no `GOOGLE_GENERATIVE_AI_API_KEY` set.
+
+**Reason:** this requirement predates this plan — CLAUDE.md's "Baseline stack" section already required it ("Do not require live Supabase credentials or a paid AI API to run the basic app locally"). Accounts and a personal closet are the single largest feature this repository has added since that line was written, and the kind of feature most likely to accidentally assume a database connection exists somewhere deep in a call chain — a guard function that forgot to check `isSupabaseConfigured()` before touching `cookies()` or a Supabase client would crash every page for any contributor, or any CI job, that hasn't provisioned a Supabase project. Writing this down as its own decision, instead of leaving it implicit in CLAUDE.md, records that all thirteen tasks before this one were built and reviewed against this constraint on purpose — it is why `createSupabaseServerClient()`/`getSupabaseEnv()` return `null` rather than throwing, and why every caller checks for that `null` before doing anything with it.
+
+**Consequences:** a contributor adding a new authenticated feature must follow the same pattern — check configuration/session state and degrade, never assume a Supabase client call succeeds or even runs. The two integration test files that do need real credentials (`src/lib/supabase/rls.integration.test.ts`, `src/features/account/delete.integration.test.ts`) are the deliberate exception, and they self-skip via `hasServiceRoleEnv()` (`src/lib/supabase/test-env.ts`) precisely so the rest of the suite's "passes with zero Supabase env vars" claim stays true regardless.
 
 ---
 

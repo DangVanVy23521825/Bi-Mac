@@ -37,10 +37,22 @@ times out) are all real and covered by tests, including an end-to-end
 Playwright spec. See ADR-011, ADR-012, ADR-016, ADR-017, ADR-018 and
 `docs/05_AI_STYLIST_SPEC.md`.
 
-`/closet` (My Closet) is **still** a copy-only shell: it renders real layout
-and copy, but there is no save action and no persistence (no `localStorage`,
-no Supabase) anywhere in `src/`. That behaviour is scoped to a later
-milestone (M4) — do not assume it exists.
+`/closet` (My Closet) is **no longer** a copy-only shell. Google OAuth via
+Supabase Auth gates it: `src/app/(account)/` + `src/proxy.ts` are the route
+boundary (ADR-021), and a signed-out or unconfigured visitor sees an inline
+message, never a redirect. Signed in, `/closet/items` is a real personal
+wardrobe — users photograph their own clothes, an AI tagger labels the photo
+(Gemini primary, deterministic fallback with no key) into a pre-filled,
+user-editable draft before it saves (ADR-027), and garment photos live in a
+private Supabase Storage bucket served only via short-lived signed URLs
+(ADR-028). `/closet/looks` and `/closet/styles` save Bí Mặc catalog
+outfits/styles by slug (ADR-026). `/stylist` now reads the signed-in user's
+own closet items and ranks them alongside the catalog, labelled separately in
+the UI as the user's own wardrobe, not a Bí Mặc recommendation. Account
+deletion (`/closet/account`) removes bucket files before the auth user row,
+and fails closed if the bucket step fails (ADR-022). See ADR-021, ADR-022,
+ADR-024 through ADR-029, and
+`docs/superpowers/specs/2026-10-31-tu-do-ca-nhan-design.md`.
 
 Editorial Stories are also unfinished, the same way: `src/data/fixtures/stories.ts`
 has 3 fixture records, but each is title-only (`slug`/`title`/`excerpt`/`image` —

@@ -144,26 +144,42 @@ Use explicit article-to-item/style/outfit relations if editorial cross-linking n
 ### `saved_items`
 
 - `user_id`
-- `fashion_item_id`
+- `item_slug` text — **not** a foreign key. The catalog lives in TypeScript
+  fixtures (`src/data/fixtures/`), not in a Postgres `fashion_items` table, so
+  there is nothing for a foreign key to point at. Validity is checked in the
+  app layer against the fixtures instead (ADR-026): rejected on write if the
+  slug isn't a real catalog item, silently dropped on read if it no longer is.
 - `created_at`
 
-Unique `(user_id, fashion_item_id)`.
+Unique `(user_id, item_slug)`.
 
 ### `saved_outfits`
 
 - `user_id`
-- `outfit_id`
+- `outfit_slug` text — same slug-not-FK rule as `saved_items` (ADR-026).
 - `created_at`
 
-Unique `(user_id, outfit_id)`.
+Unique `(user_id, outfit_slug)`.
 
 ### `saved_styles`
 
 - `user_id`
-- `style_id`
+- `style_slug` text — same slug-not-FK rule as `saved_items` (ADR-026).
 - `created_at`
 
-Unique `(user_id, style_id)`.
+Unique `(user_id, style_slug)`.
+
+### `closet_items`
+
+The user's own photographed wardrobe — distinct from `saved_items` above,
+which bookmarks Bí Mặc's own catalog. Added by
+`docs/superpowers/specs/2026-10-31-tu-do-ca-nhan-design.md`; see
+`supabase/migrations/0001_account_and_closet.sql` for the authoritative
+column list and check constraints. Shape, in brief: `user_id`, `name`,
+`image_path` (a path inside the private `closet` Storage bucket, not a URL),
+`category`/`fit`/`occasions`/`attributes`/`color_slugs`/`style_slugs` drawn
+from the exact same enum vocabulary the catalog and the AI Stylist ranker
+use, `label_source` (`'ai' | 'user'`, ADR-027), optional `note`, timestamps.
 
 ## AI entities — introduce only when persistence is needed
 
@@ -181,6 +197,11 @@ Possible fields:
 ### Photo storage
 
 Do not store a public photo URL. Store a private object path/reference with explicit access policy and deletion behavior.
+
+This applies to `closet_items.image_path` (the user's garment photos, stored in
+the private `closet` bucket) — it does not apply to the AI Stylist's optional
+body photo, which is still never stored at all, in a bucket or otherwise. The
+two are different kinds of photo with different storage rules; see ADR-028.
 
 ## RLS intent
 
