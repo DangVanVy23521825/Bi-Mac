@@ -43,12 +43,19 @@ const PNG_1X1 = Uint8Array.from([
   0x42, 0x60, 0x82,
 ])
 
+// Sáu bảng, không năm: `ai_usage` (migration `0002`) là bảng thứ sáu mang
+// `user_id` của người dùng, và nó bị bỏ sót khỏi danh sách này cho tới khi
+// review toàn nhánh chỉ ra. Nó *có* `on delete cascade` trỏ về
+// `auth.users` giống năm bảng kia — nhưng "có cascade trong file SQL" và
+// "không còn hàng nào sau khi xoá tài khoản" là hai điều khác nhau, và chỉ
+// một lần đọc thật trên project thật mới nói được điều thứ hai.
 const OWNED_TABLES = [
   'profiles',
   'closet_items',
   'saved_items',
   'saved_outfits',
   'saved_styles',
+  'ai_usage',
 ] as const
 
 describe.skipIf(!hasServiceRoleEnv())('deleteAccount trên project Supabase thật', () => {
@@ -105,6 +112,12 @@ describe.skipIf(!hasServiceRoleEnv())('deleteAccount trên project Supabase th�
       admin.from('saved_items').insert({ user_id: userId, item_slug: 'ao-so-mi-lua' }),
       admin.from('saved_outfits').insert({ user_id: userId, outfit_slug: 'look-cong-so' }),
       admin.from('saved_styles').insert({ user_id: userId, style_slug: 'modern-classic' }),
+      // Seed bằng service_role, không qua `increment_ai_usage`: sau
+      // `0003_ai_usage_lock_down.sql` hàm đó chỉ chạy trong một phiên đăng
+      // nhập thật (`auth.uid()` phải khớp `p_user_id`), còn file này chỉ
+      // có client admin. Service role ghi thẳng vào bảng được — đó cũng là
+      // đường duy nhất còn lại để sửa hạn mức bằng tay.
+      admin.from('ai_usage').insert({ user_id: userId, day: '2026-01-01', count: 3 }),
     ])
     for (const result of seeded) {
       if (result.error) throw new Error(`Không seed được dữ liệu test: ${result.error.message}`)
@@ -156,7 +169,7 @@ describe.skipIf(!hasServiceRoleEnv())('deleteAccount trên project Supabase th�
   )
 
   it.skipIf(!hasServiceRoleEnv())(
-    'sau khi xoá, năm bảng không còn hàng nào của user',
+    'sau khi xoá, sáu bảng không còn hàng nào của user',
     async () => {
       for (const table of OWNED_TABLES) {
         const column = table === 'profiles' ? 'id' : 'user_id'

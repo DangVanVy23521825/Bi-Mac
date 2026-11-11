@@ -61,6 +61,12 @@ describe.skipIf(!hasServiceRoleEnv())('RLS trên project Supabase thật', () =>
   let itemOfB: string
   const pathOfB = () => `${userB.id}/ao-cua-b.png`
 
+  // Một ngày cố định, không phải "hôm nay": hạn mức là một hàng cho mỗi
+  // (người dùng, ngày UTC), nên một ngày hằng số giữ các assertion dưới đây
+  // chính xác tuyệt đối (`count` phải đúng bằng 1) bất kể suite chạy lúc
+  // nào, và không chạm vào hàng của ngày thật.
+  const USAGE_DAY = '2026-01-01'
+
   async function createTestUser(url: string, anonKey: string) {
     const email = `bimac-rls-${randomUUID()}@example.com`
     const password = randomUUID()
@@ -136,6 +142,25 @@ describe.skipIf(!hasServiceRoleEnv())('RLS trên project Supabase thật', () =>
       .upload(pathOfB(), PNG_1X1, { contentType: 'image/png', upsert: true })
     if (uploaded.error) {
       throw new Error(`Chủ sở hữu không upload được vào thư mục của mình: ${uploaded.error.message}`)
+    }
+
+    // Hạn mức gắn nhãn AI: mỗi người tự tăng bộ đếm của mình qua RPC —
+    // sau `0003_ai_usage_lock_down.sql` đó là con đường DUY NHẤT ghi vào
+    // `ai_usage` (role `authenticated` chỉ còn `select` trên bảng này).
+    // Hai lệnh gọi này vì vậy cũng là positive control cho cả hai nửa của
+    // migration đó: nếu hàm không còn `security definer`, nó mất quyền ghi
+    // và nổ ngay ở đây thay vì để các test "A không làm được X" bên dưới
+    // đậu một cách rỗng nghĩa.
+    for (const user of [userA, userB]) {
+      const incremented = await user.client.rpc('increment_ai_usage', {
+        p_user_id: user.id,
+        p_day: USAGE_DAY,
+      })
+      if (incremented.error || incremented.data !== 1) {
+        throw new Error(
+          `Chủ sở hữu không tăng được hạn mức của chính mình: ${incremented.error?.message ?? `count = ${incremented.data}`}`,
+        )
+      }
     }
   }, SETUP_TIMEOUT_MS)
 
@@ -341,6 +366,133 @@ describe.skipIf(!hasServiceRoleEnv())('RLS trên project Supabase thật', () =>
         .from('saved_items')
         .insert({ user_id: userA.id, item_slug: slug })
       expect(second.error?.code).toBe('23505')
+    },
+    NETWORK_TIMEOUT_MS,
+  )
+
+  // ── ai_usage: bảng thứ sáu, và bảng duy nhất mà một hàng bị sửa KHÔNG
+  // làm rò rỉ dữ liệu của ai — nó làm mất trần chi phí. Review toàn nhánh
+  // chỉ ra đúng khoảng trống này: `0002` thêm bảng + hàm, nhưng file test
+  // tích hợp vẫn chỉ phủ `closet_items`/`profiles`/`saved_items`, nên một
+  // người có project thật chạy cả hai file gated vẫn thấy xanh trong khi
+  // hạn mức tốn-tiền thì ai cũng tự reset được.
+
+  it.skipIf(!hasServiceRoleEnv())(
+    'A không đọc được hàng ai_usage của B, khách chưa đăng nhập không đọc được hàng nào',
+    async () => {
+      const seenByA = await userA.client
+        .from('ai_usage')
+        .select('user_id, count')
+        .eq('user_id', userB.id)
+
+      expect(seenByA.error).toBeNull()
+      expect(seenByA.data).toEqual([])
+
+      // Và A chỉ thấy đúng hàng của mình khi không lọc gì cả.
+      const allSeenByA = await userA.client.from('ai_usage').select('user_id')
+      expect(allSeenByA.data).toEqual([{ user_id: userA.id }])
+
+      const seenByGuest = await guest.from('ai_usage').select('*')
+      expect(seenByGuest.data ?? []).toEqual([])
+    },
+    NETWORK_TIMEOUT_MS,
+  )
+
+  it.skipIf(!hasServiceRoleEnv())(
+    'A KHÔNG reset được hạn mức của chính mình — đây là lỗ hổng 0003 đóng lại',
+    async () => {
+      // Trước `0003`, `authenticated` có `update` ở mức bảng và policy
+      // `ai_usage_update_own` cho qua cả `using` lẫn `with check` (hàng đó
+      // đúng là của A), nên đúng lệnh này trả về thành công với
+      // `count = 0` và A gọi lại `/api/closet/tag` được từ đầu. Sau `0003`
+      // thì A không còn quyền `update` nào trên bảng này cả.
+      const reset = await userA.client
+        .from('ai_usage')
+        .update({ count: 0 })
+        .eq('user_id', userA.id)
+        .select('count')
+
+      expect(reset.error).not.toBeNull()
+
+      // Service role mới nói được sự thật — `data: []` một mình không
+      // chứng minh gì (cùng lý do như test "A không sửa được closet_items
+      // của B" phía trên).
+      const after = await admin
+        .from('ai_usage')
+        .select('count')
+        .eq('user_id', userA.id)
+        .eq('day', USAGE_DAY)
+        .single()
+      expect(after.data?.count).toBe(1)
+    },
+    NETWORK_TIMEOUT_MS,
+  )
+
+  it.skipIf(!hasServiceRoleEnv())(
+    'A không sửa được hàng ai_usage của B',
+    async () => {
+      const stolen = await userA.client
+        .from('ai_usage')
+        .update({ count: 999 })
+        .eq('user_id', userB.id)
+        .select('count')
+
+      expect(stolen.error).not.toBeNull()
+
+      const after = await admin
+        .from('ai_usage')
+        .select('count')
+        .eq('user_id', userB.id)
+        .eq('day', USAGE_DAY)
+        .single()
+      expect(after.data?.count).toBe(1)
+    },
+    NETWORK_TIMEOUT_MS,
+  )
+
+  it.skipIf(!hasServiceRoleEnv())(
+    'A không tăng được hạn mức của B qua RPC — hàm tự chặn, không nhờ RLS',
+    async () => {
+      // Đây là test cho dòng `p_user_id <> auth.uid()` trong
+      // `0003_ai_usage_lock_down.sql`, và nó phải đứng riêng: hàm là
+      // `security definer` nên nó BỎ QUA RLS — `with check` của
+      // `ai_usage_insert_own`/`ai_usage_update_own` không còn là thứ chặn
+      // lệnh gọi này. Nếu ai bỏ dòng kiểm tra đó đi, A đốt được hạn mức
+      // của B mà mọi policy vẫn nguyên vẹn.
+      const incremented = await userA.client.rpc('increment_ai_usage', {
+        p_user_id: userB.id,
+        p_day: USAGE_DAY,
+      })
+
+      expect(incremented.error).not.toBeNull()
+
+      const after = await admin
+        .from('ai_usage')
+        .select('count')
+        .eq('user_id', userB.id)
+        .eq('day', USAGE_DAY)
+        .single()
+      expect(after.data?.count).toBe(1)
+    },
+    NETWORK_TIMEOUT_MS,
+  )
+
+  it.skipIf(!hasServiceRoleEnv())(
+    'A không ghi đè được file của B bằng upsert',
+    async () => {
+      // `upload` không có `upsert` đi đường INSERT, nên policy *update*
+      // của `storage.objects` — thứ chặn A ghi đè hoặc dời một file vào
+      // thư mục của B — chưa từng được test nào chạm tới. `upsert: true`
+      // trên một đường dẫn đã tồn tại của B là đúng đường đi đó.
+      const overwritten = await userA.client.storage
+        .from(BUCKET)
+        .upload(pathOfB(), PNG_1X1, { contentType: 'image/png', upsert: true })
+
+      expect(overwritten.error).not.toBeNull()
+
+      // File của B vẫn còn nguyên và vẫn thuộc về B.
+      const listed = await admin.storage.from(BUCKET).list(userB.id)
+      expect((listed.data ?? []).map((file) => file.name)).toContain('ao-cua-b.png')
     },
     NETWORK_TIMEOUT_MS,
   )

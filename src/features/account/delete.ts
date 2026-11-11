@@ -2,8 +2,9 @@
 //
 // Người đã upload bốn mươi tấm ảnh quần áo của chính mình phải rời đi được
 // và dữ liệu đó thật sự biến mất: mọi hàng trong `profiles`, `closet_items`,
-// `saved_items`, `saved_outfits`, `saved_styles`, **và mọi file trong
-// bucket** — không phải một cờ `deleted_at` với dữ liệu còn nằm nguyên đó.
+// `saved_items`, `saved_outfits`, `saved_styles`, `ai_usage`, **và mọi file
+// trong bucket** — không phải một cờ `deleted_at` với dữ liệu còn nằm
+// nguyên đó.
 //
 // ── Thứ tự, và vì sao nó là cả bài toán ──────────────────────────────────
 //
