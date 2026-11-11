@@ -76,6 +76,23 @@ describe('createItemAction', () => {
     expect(result).toEqual({ ok: false, error: expect.stringContaining('Supabase') })
     expect(createClosetItem).not.toHaveBeenCalled()
   })
+
+  // Review toàn nhánh: `createClosetItem` throw trên MỌI lỗi insert
+  // (`repository.ts`), và action này là action duy nhất trong ba action
+  // không bắt — hai action kia đều trả `{ ok: false }`. Lỗi bay thẳng qua
+  // Server Action làm `AddItemForm` treo nút "Đang lưu…" vĩnh viễn, không
+  // hiện lỗi nào, và bỏ lại một ảnh đã lên bucket mà không có dòng DB nào
+  // trỏ tới. Một lỗi Supabase chớp nhoáng là đủ để chạm vào đường này, trên
+  // đúng thao tác quan trọng nhất của milestone.
+  it('createClosetItem throw (lỗi Supabase chớp nhoáng) thì trả ok:false, không revalidate', async () => {
+    createClosetItem.mockRejectedValue(new Error('insert thất bại'))
+
+    const result = await createItemAction(validDraft())
+
+    expect(result.ok).toBe(false)
+    expect(result).toEqual({ ok: false, error: expect.stringContaining('thử lại') })
+    expect(revalidatePath).not.toHaveBeenCalled()
+  })
 })
 
 describe('updateItemAction', () => {

@@ -33,6 +33,7 @@ import type { ClosetItemDraft } from '@/types/closet'
 
 const PATH = '/closet/items'
 const CONFIG_ERROR = 'Tính năng này cần Supabase được cấu hình, hiện chưa có.'
+const SAVE_ERROR = 'Chưa lưu được món đồ này. Vui lòng thử lại.'
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
 
@@ -47,7 +48,21 @@ export async function createItemAction(draft: ClosetItemDraft): Promise<ActionRe
   const supabase = await createSupabaseServerClient()
   if (!supabase) return { ok: false, error: CONFIG_ERROR }
 
-  await createClosetItem(supabase, userId, parsed.data)
+  // `createClosetItem` throw trên mọi lỗi insert (`repository.ts`), khác
+  // hai hàm repository mà `updateItemAction`/`deleteItemAction` gọi (chúng
+  // trả `null`/`false`). Bắt ở đây để cả ba action cùng một hình dạng kết
+  // quả: lỗi nào cũng về tới `AddItemForm` dưới dạng `{ ok: false }` kèm
+  // một dòng đọc được, thay vì bay qua ranh giới Server Action và treo
+  // form lại ở trạng thái "Đang lưu…".
+  //
+  // ADR-012: chỉ thông điệp tĩnh ra ngoài, không bao giờ là `error` gốc —
+  // nó mang được cả `image_path` lẫn `user_id` của người dùng.
+  try {
+    await createClosetItem(supabase, userId, parsed.data)
+  } catch {
+    return { ok: false, error: SAVE_ERROR }
+  }
+
   revalidatePath(PATH)
   return { ok: true }
 }

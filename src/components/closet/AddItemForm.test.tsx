@@ -201,6 +201,33 @@ describe('AddItemForm', () => {
     expect(onCreate).not.toHaveBeenCalled()
   })
 
+  // Review toàn nhánh: `handleSubmit` không bọc `await onCreate(draft)`
+  // trong try/catch, nên một rejection bỏ luôn `setSavePending(false)` —
+  // nút submit nằm lại ở "Đang lưu…" và disabled vĩnh viễn, không một dòng
+  // lỗi nào hiện ra, và nước duy nhất còn lại của người dùng là tải lại
+  // trang (mất luôn cơ hội dọn ảnh đang treo). Server Action là một lượt
+  // gọi mạng, nên nó reject thật — mất kết nối giữa lúc bấm là đủ.
+  it('onCreate reject thì mở lại nút Lưu và báo lỗi, không treo ở "Đang lưu…"', async () => {
+    const onCreate = vi.fn().mockRejectedValue(new Error('mất kết nối'))
+    render(<AddItemForm userId="u1" onCreate={onCreate} />)
+
+    const input = screen.getByLabelText(/Chụp hoặc chọn ảnh/i) as HTMLInputElement
+    await userEvent.upload(input, validFile())
+    await screen.findByDisplayValue(sampleTag.name)
+
+    await userEvent.click(screen.getByRole('button', { name: /Lưu vào tủ đồ/i }))
+
+    const saveButton = await screen.findByRole('button', { name: /Lưu vào tủ đồ/i })
+    expect(saveButton).toBeEnabled()
+    expect(screen.queryByRole('button', { name: /Đang lưu/i })).not.toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent(/thử lại/i)
+
+    // Form vẫn còn đó với nhãn đã điền: người dùng bấm Lưu lại được ngay,
+    // và ảnh đang treo vẫn thuộc về draft này nên "Huỷ" vẫn dọn được nó.
+    expect(screen.getByDisplayValue(sampleTag.name)).toBeInTheDocument()
+    expect(remove).not.toHaveBeenCalled()
+  })
+
   it('lưu thành công thì KHÔNG xoá ảnh khỏi bucket — ảnh giờ thuộc về món đã lưu', async () => {
     const onCreate = vi.fn().mockResolvedValue({ ok: true })
     render(<AddItemForm userId="u1" onCreate={onCreate} />)

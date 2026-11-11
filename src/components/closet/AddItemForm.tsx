@@ -183,8 +183,24 @@ export function AddItemForm({ userId, onCreate }: Props) {
 
     setSaveError(undefined)
     setSavePending(true)
-    const result = await onCreate(draft)
-    setSavePending(false)
+
+    // try/catch/finally, không phải `await` trần: `onCreate` là một Server
+    // Action, tức một lượt gọi mạng thật, nên nó reject được (mất kết nối
+    // giữa lúc bấm, server trả 500). Trước fix, một rejection bỏ luôn
+    // `setSavePending(false)` phía dưới — nút submit nằm lại ở "Đang lưu…"
+    // và disabled vĩnh viễn, không dòng lỗi nào hiện ra, và ảnh đã lên
+    // bucket thành ảnh treo vì người dùng chỉ còn cách tải lại trang.
+    // `finally` là thứ bảo đảm nút luôn mở lại, trên mọi đường ra.
+    let result: ActionResult
+    try {
+      result = await onCreate(draft)
+    } catch {
+      // ADR-012: một thông điệp tĩnh, không bao giờ là lỗi gốc.
+      setSaveError('Chưa lưu được món đồ này. Vui lòng thử lại.')
+      return
+    } finally {
+      setSavePending(false)
+    }
 
     if (!result.ok) {
       setSaveError(result.error)
