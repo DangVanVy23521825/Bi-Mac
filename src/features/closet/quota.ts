@@ -64,6 +64,20 @@
 // that went on to actually call Gemini — the same "count attempts, not
 // successes" semantics the in-memory rate limiter already uses elsewhere
 // in this codebase.
+//
+// Why this function cannot be replaced by a direct `update`/`upsert` on
+// `ai_usage` from here (or from anywhere else): as of
+// `supabase/migrations/0003_ai_usage_lock_down.sql`, `authenticated` has
+// no INSERT or UPDATE privilege on that table at all — only SELECT, plus
+// EXECUTE on `increment_ai_usage`. The branch review found that while the
+// client held those write grants, a signed-in user could `PATCH
+// ai_usage?user_id=eq.<self>` with `{"count": 0}` using the public anon
+// key and start the day over, which made the whole cap unenforceable
+// against the one actor it exists to bound. The RPC is now
+// `security definer` and checks `p_user_id = auth.uid()` itself, so the
+// only possible write to this table is "+1, for the caller, today".
+// A future quota feature belongs *inside* that function, not in a second
+// write path from TypeScript.
 
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 

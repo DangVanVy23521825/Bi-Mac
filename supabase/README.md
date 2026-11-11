@@ -120,3 +120,27 @@ mức), và một `do $$ … $$` tự khẳng định lúc áp rằng `anon`/`au
 không còn `TRUNCATE`/`REFERENCES`/`TRIGGER`/`DELETE`. Khoá chính tổ hợp
 `(user_id, day)` vừa là ràng buộc unique mà spec đòi, vừa là đích cho
 `upsert(..., { onConflict: 'user_id,day' })` ở `src/features/closet/quota.ts`.
+
+## `0003_ai_usage_lock_down.sql` — để người dùng không tự reset được hạn mức
+
+Review toàn nhánh tìm ra: với hai quyền `insert`/`update` mà `0002` cấp cho
+`authenticated`, chính người bị giới hạn tự xoá được giới hạn của mình. Anon
+key là `NEXT_PUBLIC_`, PostgREST phơi cả schema `public`, nên một người đã
+đăng nhập chỉ cần `PATCH /rest/v1/ai_usage?user_id=eq.<chính mình>` với
+`{"count": 0}` — policy cho qua, vì hàng đó đúng là của họ — rồi gọi lại
+`/api/closet/tag` từ đầu. `/api/closet/tag` không có giới hạn theo IP cũng
+không có giới hạn toàn hệ thống, nên đó là trần chi phí Gemini vision duy
+nhất, và nó mở.
+
+Migration này đóng lại bằng ba mảnh đi liền nhau: `increment_ai_usage` thành
+`security definer` (để hàm còn ghi được sau khi client mất quyền ghi), thêm
+`p_user_id = auth.uid()` ngay dòng đầu thân hàm (vì `security definer` bỏ qua
+RLS, nên `with check` không còn là thứ chặn mạo danh), và `revoke insert,
+update … from authenticated`. Sau migration này, quyền của `authenticated`
+trên `ai_usage` chỉ còn `select` — đường duy nhất ghi vào bảng là gọi hàm, và
+hàm chỉ biết "+1, cho chính người gọi, hôm nay".
+
+Hệ quả cần biết khi vận hành: `increment_ai_usage` giờ **chỉ** gọi được từ
+một phiên đăng nhập thật. Gọi bằng `service_role` (nơi `auth.uid()` là null)
+sẽ `raise exception` — đúng ý muốn. Cần sửa hạn mức bằng tay thì dùng
+`service_role` ghi thẳng vào bảng, đừng nới kiểm tra trong hàm.

@@ -123,3 +123,95 @@ describe(MIGRATION_PATH_0002, () => {
     expect(sql0002).toContain("'EXECUTE'")
   })
 })
+
+// `0003_ai_usage_lock_down.sql` đóng lỗ hổng mà review toàn-nhánh tìm ra:
+// `0002` cấp `insert, update` trên `ai_usage` cho `authenticated` (vì hàm
+// tăng bộ đếm ở đó là `security invoker`), nên một người dùng tự `PATCH
+// count = 0` được bằng chính anon key công khai rồi gọi lại route gắn nhãn
+// — một hạn mức tốn-tiền mà bên bị hạn tự reset được thì không phải hạn mức.
+//
+// Ba mảnh của fix chỉ có tác dụng khi đi cùng nhau, và đó là lý do nhóm
+// guard này tồn tại thay vì chỉ trông vào khối `do $$` trong file SQL (nó
+// chạy một lần, lúc ai đó áp migration, không bao giờ chạy lại trong CI):
+//  * bỏ `security definer` → hàm hết ghi được, fail-closed cho mọi người;
+//  * bỏ dòng so `p_user_id` với `auth.uid()` → A đốt được hạn mức của B,
+//    vì `security definer` đã bỏ qua RLS nên `with check` không còn chặn;
+//  * bỏ `revoke insert, update` → lỗ hổng gốc mở lại y như cũ.
+const MIGRATION_PATH_0003 = 'supabase/migrations/0003_ai_usage_lock_down.sql'
+const sql0003 = readFileSync(MIGRATION_PATH_0003, 'utf8')
+
+describe(MIGRATION_PATH_0003, () => {
+  it('thu hồi INSERT và UPDATE trên ai_usage khỏi authenticated, nhưng giữ SELECT', () => {
+    const revokeAt = sql0003.indexOf('revoke insert, update on table public.ai_usage')
+    expect(revokeAt).toBeGreaterThan(-1)
+
+    const revokeStatement = sql0003.slice(revokeAt, sql0003.indexOf(';', revokeAt))
+    expect(revokeStatement).toContain('authenticated')
+    // `select` không được lọt vào câu revoke: người dùng vẫn phải xem được
+    // hạn mức của chính mình (policy `ai_usage_select_own` ở `0002`).
+    expect(revokeStatement.toLowerCase()).not.toContain('select')
+
+    // Và migration này không được cấp lại thứ nó vừa thu hồi.
+    expect(sql0003).not.toMatch(/grant[^;]*(insert|update)[^;]*on table public\.ai_usage/i)
+  })
+
+  it('increment_ai_usage chuyển sang security definer', () => {
+    // Nửa thứ nhất của fix: thiếu dòng này thì hàm chạy bằng quyền người
+    // gọi, mà người gọi vừa mất quyền ghi — route gắn nhãn chết hẳn.
+    //
+    // Cắt đúng phần khai báo (từ `create or replace` tới `as $$`) rồi mới
+    // tìm trong đó, không `toContain` trên cả file: cụm "security definer"
+    // xuất hiện cả trong comment giải thích ở đầu file, nên một assertion
+    // trên toàn văn bản vẫn đậu sau khi ai đó xoá đúng cái clause thật.
+    const signatureAt = sql0003.indexOf(
+      'create or replace function public.increment_ai_usage(p_user_id uuid, p_day date)',
+    )
+    expect(signatureAt).toBeGreaterThan(-1)
+
+    const declaration = sql0003
+      .slice(signatureAt, sql0003.indexOf('as $$', signatureAt))
+      // Bỏ cả comment bên trong phần khai báo nữa, cùng lý do: comment ở
+      // đó cũng nhắc tên clause, và một guard khớp vào comment là guard
+      // không bắt được gì.
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('--'))
+      .join('\n')
+
+    expect(declaration).toContain('security definer')
+    expect(declaration).toContain("set search_path = ''")
+  })
+
+  it('hàm tự chặn p_user_id khác auth.uid() TRƯỚC khi ghi bộ đếm', () => {
+    // Nửa thứ hai, và là nửa dễ bị bỏ quên nhất: `security definer` bỏ qua
+    // RLS, nên `with check` của `ai_usage_insert_own`/`ai_usage_update_own`
+    // không còn chặn một lệnh gọi mạo danh. Kiểm cả thứ tự — kiểm tra phải
+    // đứng trước câu `insert`, không phải sau khi bộ đếm đã tăng.
+    const checkAt = sql0003.indexOf('if p_user_id is distinct from (select auth.uid()) then')
+    const raiseAt = sql0003.indexOf('raise exception', checkAt)
+    const insertAt = sql0003.indexOf('insert into public.ai_usage')
+
+    expect(checkAt).toBeGreaterThan(-1)
+    expect(raiseAt).toBeGreaterThan(checkAt)
+    expect(insertAt).toBeGreaterThan(raiseAt)
+  })
+
+  it('tự khẳng định authenticated không còn INSERT/UPDATE lúc áp migration', () => {
+    expect(sql0003).toContain('has_table_privilege')
+    for (const priv of ['INSERT', 'UPDATE', 'TRUNCATE', 'REFERENCES', 'TRIGGER', 'DELETE']) {
+      expect(sql0003).toContain(`'${priv}'`)
+    }
+    // Khẳng định luôn rằng hàm vẫn là definer — hai nửa của fix không được
+    // phép đi lẻ trên một database thật.
+    expect(sql0003).toContain('prosecdef')
+  })
+
+  it('giữ nguyên EXECUTE cho authenticated, không mở cho anon', () => {
+    const revokeAt = sql0003.indexOf('revoke all on function')
+    const grantAt = sql0003.indexOf('grant execute on function')
+
+    expect(revokeAt).toBeGreaterThan(-1)
+    expect(grantAt).toBeGreaterThan(revokeAt)
+    expect(sql0003).toContain("'public.increment_ai_usage(uuid, date)'")
+    expect(sql0003).toContain('has_function_privilege')
+  })
+})
