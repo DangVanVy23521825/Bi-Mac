@@ -230,6 +230,48 @@ describe('listClosetItems', () => {
   })
 })
 
+// Một client chỉ biết trả về lỗi — `createFakeSupabaseClient` ở trên mô
+// phỏng một database khoẻ mạnh nên không có đường nào dựng được tình huống
+// này từ nó.
+function createFailingSupabaseClient(message: string) {
+  const builder = {
+    select: () => builder,
+    eq: () => builder,
+    order: () => builder,
+    limit: () => builder,
+    then(
+      onFulfilled: (value: { data: null; error: unknown }) => unknown,
+      onRejected?: (reason: unknown) => unknown,
+    ) {
+      return Promise.resolve({ data: null, error: { message } }).then(onFulfilled, onRejected)
+    },
+  }
+  return { from: () => builder } as unknown as import('@supabase/supabase-js').SupabaseClient
+}
+
+// Review toàn nhánh: trước fix, `listClosetItems` trả `[]` cho cả lỗi đọc
+// lẫn tủ đồ rỗng thật, nên `/closet/items` nói với người có bốn mươi món
+// rằng họ chưa có món nào và mời họ thêm món đầu tiên. Lỗi phải nổi lên
+// để trang phân biệt được hai chuyện đó; `src/app/api/stylist/route.ts`
+// vẫn hạ cấp im lặng về nhóm rỗng nhờ try/catch của chính nó.
+describe('listClosetItems khi đọc lỗi', () => {
+  it('throw thay vì trả mảng rỗng — "lỗi" không được trông giống "tủ rỗng"', async () => {
+    const client = createFailingSupabaseClient('connection reset')
+
+    await expect(listClosetItems(client, 'user-a')).rejects.toThrow()
+  })
+
+  it('thông điệp lỗi không mang userId hay lỗi gốc của Supabase (ADR-012)', async () => {
+    const client = createFailingSupabaseClient('duplicate key value violates "user-a"')
+
+    const error: unknown = await listClosetItems(client, 'user-a').catch((reason) => reason)
+
+    expect(error).toBeInstanceOf(Error)
+    expect((error as Error).message).not.toContain('user-a')
+    expect((error as Error).message).not.toContain('duplicate key')
+  })
+})
+
 describe('createClosetItem', () => {
   it('đặt labelSource theo draft và gắn đúng user_id', async () => {
     const { client, calls } = createFakeSupabaseClient([])

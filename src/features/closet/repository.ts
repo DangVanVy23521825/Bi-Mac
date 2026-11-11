@@ -114,7 +114,27 @@ export async function listClosetItems(
 
   const { data, error } = await query
 
-  if (error || !data) return []
+  // Throw, không `return []`: "đọc lỗi" và "tủ đồ rỗng thật" là hai
+  // chuyện khác nhau và người dùng phải được nghe đúng chuyện của mình.
+  // Trước fix, cả hai cùng trả mảng rỗng, nên `/closet/items` nói với
+  // người có bốn mươi món rằng tủ của họ đang trống và mời họ thêm món
+  // đầu tiên — thứ duy nhất trong nhánh này nói sai về dữ liệu của chính
+  // người dùng.
+  //
+  // Hai caller, hai hành vi đúng khác nhau, và cả hai đều giữ nguyên:
+  //  * `/closet/items` (`page.tsx`) bắt và hiện "chưa tải được tủ đồ" —
+  //    nó phân biệt được hai trường hợp vì lỗi nổi lên tới nó.
+  //  * `src/app/api/stylist/route.ts` đã bọc lời gọi này trong try/catch
+  //    của `loadPersonalItems()` và hạ cấp im lặng về nhóm `closetItems`
+  //    rỗng — AI Stylist không được sập vì tầng tủ đồ có một ngày tồi
+  //    (Review Focus của task đó, đã có test riêng).
+  //
+  // ADR-012: chỉ một thông điệp tĩnh, không bao giờ `error` gốc — nó mang
+  // được cả `user_id` lẫn `image_path` trong chi tiết lỗi của Postgres.
+  if (error || !data) {
+    throw new Error('Không đọc được tủ đồ.')
+  }
+
   return (data as ClosetItemRow[]).map(rowToClosetItem)
 }
 
