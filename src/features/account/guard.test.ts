@@ -13,7 +13,7 @@ vi.mock('next/navigation', () => ({ redirect }))
 // Import after the mocks above so `guard.ts` picks up the mocked modules
 // instead of the real ones (`next/headers` in particular must never be
 // touched here — it throws outside a real request render).
-import { getAuthState, requireUserId } from './guard'
+import { getAuthState, getViewer, requireUserId } from './guard'
 
 describe('getAuthState', () => {
   beforeEach(() => {
@@ -77,6 +77,63 @@ describe('getAuthState', () => {
     const state = await getAuthState()
 
     expect(state).toEqual({ status: 'signed-out' })
+  })
+})
+
+// Review toàn nhánh, Important #5: `/wardrobe/[category]/[slug]` và
+// `/styles/[slug]` — hai trang CÔNG KHAI, chia sẻ được bằng link — gọi
+// `getAuthState()` rồi gọi thêm `getCurrentUserId()` không có guard, tức
+// một lượt gọi mạng thứ hai cho cùng một câu hỏi, và một lần lỗi chớp
+// nhoáng ở lượt đó là một trang lỗi ngay cửa trước của sản phẩm.
+// `getViewer()` trả cả hai nửa từ một lượt `auth.getUser()` duy nhất, nên
+// hai trang đó bỏ hẳn lời gọi thứ hai.
+describe('getViewer', () => {
+  beforeEach(() => {
+    isSupabaseConfigured.mockReset()
+    createSupabaseServerClient.mockReset()
+  })
+
+  it('trả userId cùng với trạng thái signed-in, từ một lượt getUser duy nhất', async () => {
+    isSupabaseConfigured.mockReturnValue(true)
+    const getUser = vi.fn().mockResolvedValue({
+      data: { user: { id: 'u1', email: 'vy@example.com', user_metadata: { full_name: 'Vy Nguyễn' } } },
+    })
+    createSupabaseServerClient.mockResolvedValue({ auth: { getUser } })
+
+    const viewer = await getViewer()
+
+    expect(viewer).toEqual({
+      authState: { status: 'signed-in', displayName: 'Vy Nguyễn' },
+      userId: 'u1',
+    })
+    // "Một lượt duy nhất" là nửa còn lại của fix: tiết kiệm đúng một
+    // round-trip auth mỗi request cho khách đã đăng nhập.
+    expect(getUser).toHaveBeenCalledTimes(1)
+  })
+
+  it('userId là null khi chưa đăng nhập', async () => {
+    isSupabaseConfigured.mockReturnValue(true)
+    createSupabaseServerClient.mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) },
+    })
+
+    expect(await getViewer()).toEqual({ authState: { status: 'signed-out' }, userId: null })
+  })
+
+  it('userId là null khi chưa cấu hình Supabase, và không tạo client', async () => {
+    isSupabaseConfigured.mockReturnValue(false)
+
+    expect(await getViewer()).toEqual({ authState: { status: 'unconfigured' }, userId: null })
+    expect(createSupabaseServerClient).not.toHaveBeenCalled()
+  })
+
+  it('auth.getUser() throw thì đọc ra signed-out, không làm sập trang công khai', async () => {
+    isSupabaseConfigured.mockReturnValue(true)
+    createSupabaseServerClient.mockResolvedValue({
+      auth: { getUser: vi.fn().mockRejectedValue(new Error('network lỗi')) },
+    })
+
+    expect(await getViewer()).toEqual({ authState: { status: 'signed-out' }, userId: null })
   })
 })
 

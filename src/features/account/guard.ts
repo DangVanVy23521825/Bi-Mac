@@ -10,14 +10,34 @@
 // own `createSupabaseServerClient()` + `auth.getUser()` call.
 // `requireUserId()` only needs the id, so it reuses `getCurrentUserId()`.
 //
-// Both call sites guard `auth.getUser()` against throwing. Task 1's review
+// `getViewer()` exists for the callers that need BOTH halves of one
+// `auth.getUser()` round-trip: what to render, and whose data to read.
+// `/wardrobe/[category]/[slug]` and `/styles/[slug]` used to call
+// `getAuthState()` and then `getCurrentUserId()` — two independent network
+// calls for one question, the second of them unguarded, on the two
+// *public, shareable* pages in the product. A transient failure in that
+// second call was an error page on the product's front-door URLs. One
+// call now answers both, and the guard below covers it.
+//
+// Why a separate function instead of putting `userId` on `AuthState`'s
+// `signed-in` variant: `AuthState` is handed to `SiteHeader`/`AuthMenu`,
+// and `AuthMenu` is a client component — anything on that type is
+// serialized into the browser payload of every page. The two pages that
+// need the id are server-only, so the id has no business travelling
+// there. `getAuthState()` stays exactly the shape its consumers already
+// expect and is now a thin read of `getViewer()`, so there is still only
+// one implementation of "who is signed in".
+//
+// Both call sites in this file (`getViewer()`, which `getAuthState()`
+// reads, and `requireUserId()`) guard `auth.getUser()` against throwing.
+// Task 1's review
 // flagged `getCurrentUserId()` for not doing this itself — a network
 // hiccup or a Supabase outage throws straight through it. That was Minor
 // there because nothing called it yet; it stops being Minor the moment
 // this file becomes the first caller on every page render. The guard sits
 // here, not inside `session.ts`, for two reasons: `session.ts` is a
 // reviewed, already-committed Task 1 module outside this task's scope, and
-// `getAuthState()` already needs its own `auth.getUser()` call anyway
+// `getViewer()` already needs its own `auth.getUser()` call anyway
 // (for the reason above), so co-locating both guards here keeps the one
 // policy — a Supabase error degrades to "no user", the same outcome a real
 // signed-out visitor gets — in one place instead of split across a
@@ -35,16 +55,24 @@ export type AuthState =
   | { status: 'signed-out' }
   | { status: 'signed-in'; displayName: string | null }
 
-export async function getAuthState(): Promise<AuthState> {
-  if (!isSupabaseConfigured()) return { status: 'unconfigured' }
+/**
+ * One `auth.getUser()` round-trip, both answers: `authState` for what to
+ * render, `userId` for whose rows to read. `userId` is non-null exactly
+ * when `authState.status === 'signed-in'`.
+ *
+ * A caller that only renders should keep using `getAuthState()`; this one
+ * is for a page that renders *and* reads the signed-in user's own data.
+ */
+export async function getViewer(): Promise<{ authState: AuthState; userId: string | null }> {
+  if (!isSupabaseConfigured()) return { authState: { status: 'unconfigured' }, userId: null }
 
   const supabase = await createSupabaseServerClient()
-  if (!supabase) return { status: 'unconfigured' }
+  if (!supabase) return { authState: { status: 'unconfigured' }, userId: null }
 
   try {
     const { data } = await supabase.auth.getUser()
     const user = data.user
-    if (!user) return { status: 'signed-out' }
+    if (!user) return { authState: { status: 'signed-out' }, userId: null }
 
     const metadata = user.user_metadata as Record<string, unknown> | undefined
     const displayName =
@@ -53,12 +81,17 @@ export async function getAuthState(): Promise<AuthState> {
       user.email ??
       null
 
-    return { status: 'signed-in', displayName }
+    return { authState: { status: 'signed-in', displayName }, userId: user.id }
   } catch {
     // See module comment: a transient auth-server error reads as
     // signed-out, never as a crashed page.
-    return { status: 'signed-out' }
+    return { authState: { status: 'signed-out' }, userId: null }
   }
+}
+
+export async function getAuthState(): Promise<AuthState> {
+  const { authState } = await getViewer()
+  return authState
 }
 
 export async function requireUserId(): Promise<string> {

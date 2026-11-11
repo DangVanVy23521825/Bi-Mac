@@ -13,11 +13,10 @@ import {
   getOutfitsForStyle,
   getStyleBySlug,
 } from '@/data'
-import { getAuthState } from '@/features/account/guard'
+import { getViewer } from '@/features/account/guard'
 import { isStyleSaved, listSavedOutfits } from '@/features/closet/saved'
 import { toggleSavedOutfitAction, toggleSavedStyleAction } from '@/features/closet/savedActions'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { getCurrentUserId } from '@/lib/supabase/session'
 
 type Params = { slug: string }
 
@@ -60,15 +59,16 @@ export default async function StyleDetailPage({ params }: { params: Promise<Para
   const palette = colors.filter((color) => style.colorSlugs.includes(color.slug))
 
   // Cùng lý do với trang item detail: trang này vẫn công khai, không cần
-  // đăng nhập (quyết định #3), nên gọi `getAuthState()` trực tiếp thay vì
-  // `requireUserId()`.
-  const authState = await getAuthState()
+  // đăng nhập (quyết định #3), nên không gọi `requireUserId()` — và dùng
+  // `getViewer()` để lấy `authState` cùng `userId` trong một lượt
+  // `auth.getUser()` có guard, thay vì một lời gọi `getCurrentUserId()`
+  // thứ hai không guard trên một URL công khai.
+  const { authState, userId } = await getViewer()
   let styleSaved = false
   let savedOutfitSlugs = new Set<string>()
-  if (authState.status === 'signed-in') {
-    const userId = await getCurrentUserId()
-    const supabase = userId ? await createSupabaseServerClient() : null
-    if (userId && supabase) {
+  if (authState.status === 'signed-in' && userId) {
+    const supabase = await createSupabaseServerClient()
+    if (supabase) {
       styleSaved = await isStyleSaved(supabase, userId, style.slug)
       // Một truy vấn cho cả trang, không phải một truy vấn mỗi look — các
       // look hiển thị ở "Look mẫu" dưới đây tra slug của chính nó trong

@@ -12,11 +12,10 @@ import {
   getRelatedOutfits,
   getStylesForItem,
 } from '@/data'
-import { getAuthState } from '@/features/account/guard'
+import { getViewer } from '@/features/account/guard'
 import { isItemSaved, listSavedOutfits } from '@/features/closet/saved'
 import { toggleSavedItemAction, toggleSavedOutfitAction } from '@/features/closet/savedActions'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { getCurrentUserId } from '@/lib/supabase/session'
 
 type Params = { category: string; slug: string }
 
@@ -56,19 +55,26 @@ export default async function ItemDetailPage({ params }: { params: Promise<Param
     getRelatedOutfits(item.slug),
   ])
 
-  // Trang này vẫn phải xem được không cần đăng nhập (quyết định #3) — gọi
-  // `getAuthState()` trực tiếp (không qua `requireUserId()`, hàm đó
-  // redirect) đúng như comment đầu file của chính `getAuthState()`: "mọi
-  // thứ chỉ cần RENDER khác đi thì gọi `getAuthState()`". Khi chưa cấu
-  // hình Supabase, nhánh này dừng trước khi chạm `cookies()` nên trang vẫn
-  // tĩnh được như cũ (xác nhận bằng `pnpm build` không có biến môi trường).
-  const authState = await getAuthState()
+  // Trang này vẫn phải xem được không cần đăng nhập (quyết định #3) — nên
+  // không gọi `requireUserId()`, hàm đó redirect.
+  //
+  // `getViewer()` chứ không phải `getAuthState()` rồi `getCurrentUserId()`:
+  // đây là trang CÔNG KHAI, chia sẻ được bằng link, và lời gọi
+  // `getCurrentUserId()` thứ hai ấy không có guard (hàm đó cố ý không tự
+  // guard — xem `guard.ts`), nên một lỗi auth chớp nhoáng ở lượt gọi mạng
+  // thứ hai là một trang lỗi ngay cửa trước của sản phẩm. Một lượt
+  // `auth.getUser()` giờ trả cả hai nửa, và nó được guard.
+  //
+  // Khi chưa cấu hình Supabase, nhánh này dừng trước khi chạm `cookies()`
+  // nên trang vẫn tĩnh được như cũ (xác nhận bằng `pnpm build` không có
+  // biến môi trường — và xem ADR-023 về việc root layout đã làm cả app
+  // dynamic khi Supabase ĐƯỢC cấu hình).
+  const { authState, userId } = await getViewer()
   let itemSaved = false
   let savedOutfitSlugs = new Set<string>()
-  if (authState.status === 'signed-in') {
-    const userId = await getCurrentUserId()
-    const supabase = userId ? await createSupabaseServerClient() : null
-    if (userId && supabase) {
+  if (authState.status === 'signed-in' && userId) {
+    const supabase = await createSupabaseServerClient()
+    if (supabase) {
       itemSaved = await isItemSaved(supabase, userId, item.slug)
       // Một truy vấn cho cả trang — các look liên quan dưới đây tra slug
       // của chính mình trong tập này, không mỗi look tự gọi một query.
