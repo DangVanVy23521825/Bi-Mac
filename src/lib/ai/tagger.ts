@@ -8,6 +8,11 @@
 // have the same value set, but that is enforced by a test
 // (`tagger.test.ts`), not by a shared declaration, because a shared
 // declaration would have to live on the forbidden side of the boundary.
+// That test pins the two together with a
+// `Record<CategorySlug, GarmentCategory>`, so drift in either direction —
+// a member added on the catalog side, or removed/renamed here — is a
+// `tsc` error, not something a runtime comparison of two hand-written
+// lists might miss.
 //
 // `TagRequest` follows the same shape as `AnalyzeRequest`/`ExplainRequest`
 // in `provider.ts`: flat data the caller assembles from catalog entities

@@ -100,6 +100,49 @@ describe('garmentTagSchema', () => {
   })
 })
 
+// Review toàn nhánh, Important #6: khối `describe` ngay dưới đây viết tay
+// cả hai mảng rồi so lúc chạy, nên nó KHÔNG bắt được chiều mà drift thật
+// sự xảy ra. Thêm một thành viên thứ sáu vào `CategorySlug` thì cả hai
+// mảng vẫn ở năm phần tử, cả hai vẫn typecheck (một array literal được
+// phép chứa tập con của union), và phép so vẫn đậu — chỉ xoá hoặc đổi tên
+// mới bị bắt. Nhưng `tagger.ts` lại gọi test này là "the only thing
+// stopping `GarmentCategory` from quietly drifting".
+//
+// `Record<CategorySlug, GarmentCategory>` khoá được cả hai chiều, và khoá
+// ở tầng biên dịch chứ không phải lúc chạy:
+//  * key: `Record` đòi ĐỦ mọi thành viên của `CategorySlug` — thêm một
+//    slug mới vào catalog mà không thêm vào `GarmentCategory` là lỗi
+//    "property is missing" của `tsc`, ngay tại dòng này;
+//  * value: mỗi giá trị phải là một `GarmentCategory` hợp lệ — bỏ một
+//    thành viên khỏi `GarmentCategory` là lỗi gán, cũng ngay tại đây.
+//
+// Không cần assertion lúc chạy để bắt drift (đó là việc của `tsc`), nên
+// phần `it` dưới đây đi thêm một bước nữa: mỗi category thật sự qua được
+// `garmentTagSchema`. Thiếu bước đó, một thành viên mới có thể có mặt ở
+// cả hai union mà vẫn bị schema của tagger từ chối lúc chạy.
+const bothWays: Record<CategorySlug, GarmentCategory> = {
+  tops: 'tops',
+  bottoms: 'bottoms',
+  dresses: 'dresses',
+  outerwear: 'outerwear',
+  accessories: 'accessories',
+}
+
+describe('GarmentCategory và CategorySlug khoá nhau hai chiều lúc biên dịch', () => {
+  it('mọi CategorySlug đều là một GarmentCategory mà garmentTagSchema chấp nhận', () => {
+    const slugs = Object.keys(bothWays) as CategorySlug[]
+    expect(slugs.length).toBeGreaterThan(0)
+
+    for (const slug of slugs) {
+      const result = garmentTagSchema(vocabulary).safeParse({
+        ...validTag(),
+        category: bothWays[slug],
+      })
+      expect(result.success, `category ${slug} bị garmentTagSchema từ chối`).toBe(true)
+    }
+  })
+})
+
 describe('GarmentCategory và CategorySlug phải cùng tập giá trị', () => {
   it('không lệch nhau giữa hai bản khai báo riêng', () => {
     const garmentCategories: GarmentCategory[] = [
