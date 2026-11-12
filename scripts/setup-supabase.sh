@@ -219,7 +219,19 @@ TOTAL_STAGES=6
 # bị dùng cho build production.
 ENV_FILE=".env.local"
 
-MIGRATION="supabase/migrations/0001_account_and_closet.sql"
+# Mọi file migration, theo đúng thứ tự số, liệt kê từ thư mục chứ không viết
+# tay từng tên. Trước đây dòng này là một hằng số trỏ vào đúng
+# `0001_account_and_closet.sql`, nên một người dựng project bằng wizard này
+# chỉ áp `0001` — `0002_ai_usage.sql` (bảng hạn mức) và
+# `0003_ai_usage_lock_down.sql` (thu hồi quyền ghi bảng đó) không bao giờ
+# chạy, tức tính năng gắn nhãn AI hỏng ngay từ đầu *và* lỗ hổng tự-reset
+# hạn mức còn nguyên trên một project trông như đã dựng xong. Liệt kê thư
+# mục để file thêm sau này tự được đi qua, không cần ai nhớ sửa script.
+MIGRATIONS_DIR="supabase/migrations"
+MIGRATIONS=()
+while IFS= read -r _migration_file; do
+  [[ -f "$_migration_file" ]] && MIGRATIONS+=("$_migration_file")
+done < <(printf '%s\n' "$MIGRATIONS_DIR"/*.sql | LC_ALL=C sort)
 
 banner "Bí Mặc — Supabase + đăng nhập Google"
 
@@ -308,24 +320,55 @@ note "production quay về trang trắng."
 pause "Đã lưu URL configuration?"
 
 # ── Stage 6 ───────────────────────────────────────────────────────────────
-stage "Áp migration: bảng, RLS và bucket private"
-say "Migration tạo năm bảng, bật RLS, và tạo bucket private 'closet'."
-if command -v supabase >/dev/null 2>&1; then
-  note "Có Supabase CLI. Repo không commit supabase/config.toml, nên cần init"
-  note "trước, không thì 'link' dừng ngay:"
-  note "  supabase init     # chỉ lần đầu, không ghi đè migrations/"
-  note "  supabase link --project-ref ${PROJECT_REF}"
-  note "  supabase db push"
-  note "Hoặc bỏ qua CLI và dán tay theo hai bước dưới đây — cách nào cũng được."
+stage "Áp migration: bảng, RLS, bucket private và hạn mức gọi AI"
+say "Các migration tạo bảng, bật RLS, tạo bucket private 'closet', và khoá"
+say "hạn mức gọi AI gắn nhãn lại cho đúng."
+warn "Phải áp ĐỦ và áp THEO SỐ. Mỗi file dựa trên file trước nó — 0003 sửa"
+warn "đúng cái hàm 0002 tạo ra — nên bỏ sót một file không phải là thiếu một"
+warn "tính năng, mà là một project dựng nửa vời."
+
+if (( ${#MIGRATIONS[@]} == 0 )); then
+  warn "Không thấy file .sql nào trong ${MIGRATIONS_DIR}/."
+  note "Script này đọc đường dẫn tương đối, nên hãy chạy nó từ gốc repo:"
+  note "  bash scripts/setup-supabase.sh"
+  SKIPPED+=("áp migration (không tìm thấy ${MIGRATIONS_DIR}/*.sql)")
+  pause "Đã biết chỗ cần sửa?"
 else
-  note "Chưa có Supabase CLI — dùng SQL editor trên dashboard là đủ."
+  note "Có ${#MIGRATIONS[@]} file cần áp, theo đúng thứ tự này:"
+  for _migration_file in "${MIGRATIONS[@]}"; do
+    note "  ${_migration_file}"
+  done
+
+  if command -v supabase >/dev/null 2>&1; then
+    note ""
+    note "Có Supabase CLI — nó áp cả ${#MIGRATIONS[@]} file theo thứ tự giúp bạn."
+    note "Repo không commit supabase/config.toml, nên cần init trước, không thì"
+    note "'link' dừng ngay:"
+    note "  supabase init     # chỉ lần đầu, không ghi đè migrations/"
+    note "  supabase link --project-ref ${PROJECT_REF}"
+    note "  supabase db push"
+    note "Hoặc bỏ qua CLI và dán tay từng file dưới đây — cách nào cũng được."
+  else
+    note "Chưa có Supabase CLI — dán tay từng file qua SQL editor là đủ."
+  fi
+
+  open_url "${PROJECT_DASHBOARD}/sql/new"
+  note "Mỗi file một lượt: dán, Run, rồi quay lại đây xác nhận trước khi sang"
+  note "file tiếp theo. Mở một query tab mới cho mỗi file cho gọn."
+
+  _migration_index=0
+  for _migration_file in "${MIGRATIONS[@]}"; do
+    _migration_index=$((_migration_index + 1))
+    step "[${_migration_index}/${#MIGRATIONS[@]}] Mở ${_migration_file}, copy toàn bộ nội dung."
+    step "[${_migration_index}/${#MIGRATIONS[@]}] Dán vào SQL editor và bấm Run."
+    pause "File ${_migration_index}/${#MIGRATIONS[@]} (${_migration_file##*/}) đã chạy xong mà không có lỗi?"
+  done
+
+  note "Mỗi file viết để chạy một lần. Chạy lại có thể báo 'already exists' —"
+  note "đó là bình thường, không phải lỗi cần sửa."
+  note "Nếu một file dừng lại vì một 'raise exception' tiếng Việt, đó là chính"
+  note "nó tự kiểm tra và tự chặn: đọc câu báo rồi sửa, đừng bỏ qua file đó."
 fi
-open_url "${PROJECT_DASHBOARD}/sql/new"
-step "Mở file ${MIGRATION} trong repo, copy toàn bộ nội dung."
-step "Dán vào SQL editor và bấm Run."
-note "Migration chạy một lần. Chạy lần hai sẽ báo 'already exists' — đó là"
-note "bình thường, không phải lỗi cần sửa."
-pause "Migration đã chạy xong mà không có lỗi?"
 open_url "${PROJECT_DASHBOARD}/storage/buckets"
 step "Xác nhận bucket 'closet' có mặt và được đánh dấu Private."
 warn "Nếu nó hiện Public thì dừng lại: ảnh quần áo của người dùng đang công khai."

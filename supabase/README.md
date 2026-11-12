@@ -41,9 +41,30 @@ schema). Mà `supabase link`/`supabase db push` thì đòi có `config.toml`, n�
 bỏ `supabase init` ra là `link` sẽ dừng ngay. `supabase init` chỉ tạo thêm
 `config.toml` bên cạnh `migrations/`, không ghi đè gì trong đó.
 
-Không có CLI: mở SQL editor trên dashboard, dán toàn bộ
-`migrations/0001_account_and_closet.sql`, bấm Run. Migration viết để chạy một
-lần; chạy lại sẽ báo `already exists`.
+Không có CLI: mở SQL editor trên dashboard rồi dán **từng file** trong
+`migrations/`, **theo đúng thứ tự số**, mỗi file một lượt Run. Hiện là ba file:
+
+```
+supabase/migrations/0001_account_and_closet.sql   # bảng, RLS, bucket private
+supabase/migrations/0002_ai_usage.sql             # bảng hạn mức + hàm tăng bộ đếm
+supabase/migrations/0003_ai_usage_lock_down.sql   # thu hồi quyền ghi bảng đó
+```
+
+Quy tắc là "đủ mọi file trong `migrations/`, theo thứ tự", không phải "ba file
+này" — thêm file mới thì danh sách trên cũ đi, thư mục mới là nguồn sự thật
+(`scripts/setup-supabase.sh` liệt kê thư mục chính vì vậy).
+
+Thứ tự là bắt buộc, không phải gợi ý: mỗi file dựa trên file trước nó — `0003`
+`create or replace` đúng cái hàm `0002` tạo ra rồi thu hồi `insert`/`update`
+mà `0002` đã cấp. Bỏ sót một file không để lại một project thiếu tính năng mà
+để lại một project dựng nửa vời: thiếu `0002` thì không có bảng `ai_usage` nên
+mọi lượt gắn nhãn AI tụt xuống nhánh dự phòng (`consumeTagQuota` fail-closed
+khi truy vấn lỗi), còn thiếu `0003` thì `authenticated` vẫn ghi được
+`ai_usage` nên người dùng tự `PATCH count = 0` để xoá hạn mức của chính mình.
+
+Mỗi file viết để chạy một lần; chạy lại có thể báo `already exists`. Nếu một
+file dừng vì một `raise exception` tiếng Việt thì đó là khối `do $$ … $$` tự
+kiểm tra của chính nó — đọc câu báo rồi sửa, đừng bỏ qua file đó.
 
 Nếu `supabase db push` báo lỗi quyền ở phần `storage.*` (một số project đặt
 `storage.objects` thuộc `supabase_storage_admin`), chạy riêng phần bucket +
