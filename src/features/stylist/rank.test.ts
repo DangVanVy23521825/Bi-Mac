@@ -3,6 +3,7 @@ import { allColors, allItems, allOutfits, allStyles } from '@/data'
 import type { FashionItem, Outfit } from '@/types/content'
 import { OCCASIONS, type StylistAnswers } from '@/types/stylist'
 import type { ResolvedAnalysis, StylistCatalog } from '@/features/stylist/resolve'
+import type { PersonalItem } from '@/features/stylist/rankable'
 import { rankItems, rankOutfits } from '@/features/stylist/rank'
 
 const catalog: StylistCatalog = {
@@ -134,7 +135,57 @@ describe('rankOutfits', () => {
 
 describe('rankItems', () => {
   it('rankItems cũng loại cứng theo avoid', () => {
-    const items = rankItems(analysisAll, answers({ avoids: ['sheer'] }), catalog, 20)
+    const items = rankItems(analysisAll, answers({ avoids: ['sheer'] }), catalog.items, 20)
     expect(items.map((i) => i.slug)).not.toContain('ao-lua')
+  })
+})
+
+describe('rankItems với RankableItem bất kỳ (không phải FashionItem)', () => {
+  const personalItemA: PersonalItem = {
+    slug: 'ca-nhan-ao-so-mi',
+    name: 'Áo sơ mi của tôi',
+    image: null,
+    note: null,
+    colorSlugs: ['kem'],
+    styleSlugs: ['minimalist'],
+    occasions: ['work', 'casual'],
+    fit: 'fitted',
+    attributes: [],
+  }
+
+  const personalItemB: PersonalItem = {
+    slug: 'ca-nhan-chan-vay-jean',
+    name: 'Chân váy jean của tôi',
+    image: null,
+    note: 'Đồ cũ còn mới',
+    colorSlugs: ['chocolate'],
+    styleSlugs: ['modern-classic'],
+    occasions: ['casual', 'date'],
+    fit: 'relaxed',
+    attributes: [],
+  }
+
+  it('rankItems xếp hạng được object chỉ có các trường của RankableItem', () => {
+    const ranked = rankItems(analysisAll, answers(), [personalItemA, personalItemB], 10)
+    expect(ranked.map((i) => i.slug).sort()).toEqual([personalItemA.slug, personalItemB.slug].sort())
+    // Kiểm trường chỉ PersonalItem mới có (không nằm trên FashionItem) để
+    // chứng minh object trả về đúng là T truyền vào, không bị ép về
+    // FashionItem.
+    const found = ranked.find((i) => i.slug === personalItemB.slug)
+    expect(found?.note).toBe('Đồ cũ còn mới')
+  })
+
+  it('rankItems giữ nguyên hard filter avoid trên món cá nhân', () => {
+    const avoided: PersonalItem = { ...personalItemA, slug: 'ca-nhan-ao-xuyen-thau', attributes: ['sheer'] }
+    const ranked = rankItems(analysisAll, answers({ avoids: ['sheer'] }), [personalItemA, avoided], 10)
+    expect(ranked.map((i) => i.slug)).not.toContain(avoided.slug)
+    expect(ranked.map((i) => i.slug)).toContain(personalItemA.slug)
+  })
+
+  it('rankItems giữ nguyên hard filter occasion trên món cá nhân', () => {
+    const wrongOccasion: PersonalItem = { ...personalItemA, slug: 'ca-nhan-vay-su-kien', occasions: ['event'] }
+    const ranked = rankItems(analysisAll, answers({ occasions: ['work'] }), [personalItemA, wrongOccasion], 10)
+    expect(ranked.map((i) => i.slug)).not.toContain(wrongOccasion.slug)
+    expect(ranked.map((i) => i.slug)).toContain(personalItemA.slug)
   })
 })

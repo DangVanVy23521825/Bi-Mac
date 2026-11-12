@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { RelatedOutfits } from '@/components/editorial/RelatedOutfits'
+import { SaveButton } from '@/components/closet/SaveButton'
 import { EditorialImage } from '@/components/ui/EditorialImage'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { ItemFacts } from '@/components/wardrobe/ItemFacts'
@@ -11,6 +12,10 @@ import {
   getRelatedOutfits,
   getStylesForItem,
 } from '@/data'
+import { getViewer } from '@/features/account/guard'
+import { isItemSaved, listSavedOutfits } from '@/features/closet/saved'
+import { toggleSavedItemAction, toggleSavedOutfitAction } from '@/features/closet/savedActions'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 type Params = { category: string; slug: string }
 
@@ -50,6 +55,34 @@ export default async function ItemDetailPage({ params }: { params: Promise<Param
     getRelatedOutfits(item.slug),
   ])
 
+  // Trang này vẫn phải xem được không cần đăng nhập (quyết định #3) — nên
+  // không gọi `requireUserId()`, hàm đó redirect.
+  //
+  // `getViewer()` chứ không phải `getAuthState()` rồi `getCurrentUserId()`:
+  // đây là trang CÔNG KHAI, chia sẻ được bằng link, và lời gọi
+  // `getCurrentUserId()` thứ hai ấy không có guard (hàm đó cố ý không tự
+  // guard — xem `guard.ts`), nên một lỗi auth chớp nhoáng ở lượt gọi mạng
+  // thứ hai là một trang lỗi ngay cửa trước của sản phẩm. Một lượt
+  // `auth.getUser()` giờ trả cả hai nửa, và nó được guard.
+  //
+  // Khi chưa cấu hình Supabase, nhánh này dừng trước khi chạm `cookies()`
+  // nên trang vẫn tĩnh được như cũ (xác nhận bằng `pnpm build` không có
+  // biến môi trường — và xem ADR-023 về việc root layout đã làm cả app
+  // dynamic khi Supabase ĐƯỢC cấu hình).
+  const { authState, userId } = await getViewer()
+  let itemSaved = false
+  let savedOutfitSlugs = new Set<string>()
+  if (authState.status === 'signed-in' && userId) {
+    const supabase = await createSupabaseServerClient()
+    if (supabase) {
+      itemSaved = await isItemSaved(supabase, userId, item.slug)
+      // Một truy vấn cho cả trang — các look liên quan dưới đây tra slug
+      // của chính mình trong tập này, không mỗi look tự gọi một query.
+      const saved = await listSavedOutfits(supabase, userId)
+      savedOutfitSlugs = new Set(saved.map((outfit) => outfit.slug))
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
       <div className="grid gap-10 sm:grid-cols-2 sm:items-center">
@@ -57,6 +90,16 @@ export default async function ItemDetailPage({ params }: { params: Promise<Param
         <div>
           <h1 className="font-display text-4xl sm:text-5xl">{item.name}</h1>
           <p className="mt-4 max-w-md font-body text-base text-accent-soft">{item.excerpt}</p>
+          {authState.status !== 'unconfigured' && (
+            <div className="mt-6">
+              <SaveButton
+                slug={item.slug}
+                initialSaved={itemSaved}
+                isSignedIn={authState.status === 'signed-in'}
+                onToggle={toggleSavedItemAction}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -89,7 +132,18 @@ export default async function ItemDetailPage({ params }: { params: Promise<Param
       </section>
 
       <section className="mt-16">
-        <RelatedOutfits related={related} />
+        <RelatedOutfits
+          related={related}
+          save={
+            authState.status === 'unconfigured'
+              ? undefined
+              : {
+                  isSignedIn: authState.status === 'signed-in',
+                  onToggle: toggleSavedOutfitAction,
+                  savedSlugs: savedOutfitSlugs,
+                }
+          }
+        />
       </section>
     </div>
   )

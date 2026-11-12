@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import { Footer } from "@/components/layout/Footer";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { getAuthState } from "@/features/account/guard";
 import "./globals.css";
 
 const display = Cormorant_Garamond({
@@ -23,15 +24,17 @@ export const metadata: Metadata = {
     "Từ điển thời trang, cách phối đồ theo style, và gợi ý phối đồ cá nhân cho phụ nữ Việt.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const authState = await getAuthState();
+
   return (
     <html lang="vi" className={`${display.variable} ${body.variable}`}>
       <body>
-        <SiteHeader />
+        <SiteHeader authState={authState} />
         <main>{children}</main>
         <Footer />
       </body>

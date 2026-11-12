@@ -30,7 +30,7 @@ import Link from 'next/link'
 import type { AnalysisStage, StylistOutcome } from '@/features/stylist/pipeline'
 import { Questionnaire, type QuestionnaireSubmission } from './Questionnaire'
 import { StylistResult } from './StylistResult'
-import type { ItemAttribute } from '@/types/stylist'
+import type { ItemAttribute, StylistAnswers } from '@/types/stylist'
 
 type ErrorKind = 'photo-too-large' | 'photo-type-unsupported' | 'network'
 
@@ -65,6 +65,7 @@ type ResultLine = {
   type: 'result'
   outfits: StylistOutcome['outfits']
   items: StylistOutcome['items']
+  closetItems: StylistOutcome['closetItems']
   providerId: StylistOutcome['providerId']
   degraded: StylistOutcome['degraded']
   degradedReason: StylistOutcome['degradedReason']
@@ -96,6 +97,7 @@ function assembleOutcome(
     palette: analysis.palette,
     outfits: result.outfits,
     items: result.items,
+    closetItems: result.closetItems,
     notes: analysis.notes,
   }
 }
@@ -209,9 +211,14 @@ function PartialAnalysis({ analysis }: { analysis: AnalysisStage }) {
 
 type Props = {
   avoidOptions: ItemAttribute[]
+  // Task 12: resolved server-side (see `src/app/stylist/page.tsx`) so a
+  // signed-in visitor's last questionnaire answers are already in the
+  // first render — never fetched client-side, and never present at all
+  // for a signed-out visitor.
+  initialAnswers?: StylistAnswers
 }
 
-export function StylistFlow({ avoidOptions }: Props) {
+export function StylistFlow({ avoidOptions, initialAnswers }: Props) {
   const [state, setState] = useState<State>({ status: 'idle' })
 
   async function handleSubmit({ answers, photo }: QuestionnaireSubmission) {
@@ -274,7 +281,12 @@ export function StylistFlow({ avoidOptions }: Props) {
 
   return (
     <div className="space-y-16">
-      <Questionnaire avoidOptions={avoidOptions} onSubmit={handleSubmit} pending={state.status === 'pending'} />
+      <Questionnaire
+        avoidOptions={avoidOptions}
+        onSubmit={handleSubmit}
+        pending={state.status === 'pending'}
+        initialAnswers={initialAnswers}
+      />
 
       {state.status === 'error' && (
         <p className="font-body text-sm text-accent-soft">

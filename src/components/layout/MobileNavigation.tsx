@@ -3,9 +3,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import type { AuthState } from '@/features/account/guard'
+import { AuthMenu } from './AuthMenu'
 import { NAV, isActive } from './nav'
 
-export function MobileNavigation() {
+type MobileNavigationProps = {
+  authState: AuthState
+}
+
+export function MobileNavigation({ authState }: MobileNavigationProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
@@ -56,6 +62,10 @@ export function MobileNavigation() {
               </li>
             ))}
           </ul>
+
+          <div className="mt-10">
+            <AuthMenu authState={authState} />
+          </div>
         </nav>
       )}
     </div>

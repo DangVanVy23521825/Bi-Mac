@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { OutfitLook } from '@/components/editorial/OutfitLook'
+import { SaveButton } from '@/components/closet/SaveButton'
 import { CtaLink } from '@/components/ui/CtaLink'
 import { EditorialImage } from '@/components/ui/EditorialImage'
 import { SectionHeading } from '@/components/ui/SectionHeading'
@@ -12,6 +13,10 @@ import {
   getOutfitsForStyle,
   getStyleBySlug,
 } from '@/data'
+import { getViewer } from '@/features/account/guard'
+import { isStyleSaved, listSavedOutfits } from '@/features/closet/saved'
+import { toggleSavedOutfitAction, toggleSavedStyleAction } from '@/features/closet/savedActions'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 type Params = { slug: string }
 
@@ -53,6 +58,26 @@ export default async function StyleDetailPage({ params }: { params: Promise<Para
 
   const palette = colors.filter((color) => style.colorSlugs.includes(color.slug))
 
+  // Cùng lý do với trang item detail: trang này vẫn công khai, không cần
+  // đăng nhập (quyết định #3), nên không gọi `requireUserId()` — và dùng
+  // `getViewer()` để lấy `authState` cùng `userId` trong một lượt
+  // `auth.getUser()` có guard, thay vì một lời gọi `getCurrentUserId()`
+  // thứ hai không guard trên một URL công khai.
+  const { authState, userId } = await getViewer()
+  let styleSaved = false
+  let savedOutfitSlugs = new Set<string>()
+  if (authState.status === 'signed-in' && userId) {
+    const supabase = await createSupabaseServerClient()
+    if (supabase) {
+      styleSaved = await isStyleSaved(supabase, userId, style.slug)
+      // Một truy vấn cho cả trang, không phải một truy vấn mỗi look — các
+      // look hiển thị ở "Look mẫu" dưới đây tra slug của chính nó trong
+      // tập này thay vì mỗi look tự gọi `isOutfitSaved`.
+      const saved = await listSavedOutfits(supabase, userId)
+      savedOutfitSlugs = new Set(saved.map((outfit) => outfit.slug))
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
       <div className="grid gap-10 sm:grid-cols-2 sm:items-center">
@@ -60,6 +85,16 @@ export default async function StyleDetailPage({ params }: { params: Promise<Para
         <div>
           <h1 className="font-display text-4xl sm:text-5xl">{style.name}</h1>
           <p className="mt-4 max-w-md font-body text-base text-accent-soft">{style.tagline}</p>
+          {authState.status !== 'unconfigured' && (
+            <div className="mt-6">
+              <SaveButton
+                slug={style.slug}
+                initialSaved={styleSaved}
+                isSignedIn={authState.status === 'signed-in'}
+                onToggle={toggleSavedStyleAction}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -116,7 +151,19 @@ export default async function StyleDetailPage({ params }: { params: Promise<Para
         <SectionHeading eyebrow="Gợi ý" title="Look mẫu" />
         <div className="space-y-16">
           {outfits.map((outfit) => (
-            <OutfitLook key={outfit.slug} outfit={outfit} />
+            <OutfitLook
+              key={outfit.slug}
+              outfit={outfit}
+              save={
+                authState.status === 'unconfigured'
+                  ? undefined
+                  : {
+                      initialSaved: savedOutfitSlugs.has(outfit.slug),
+                      isSignedIn: authState.status === 'signed-in',
+                      onToggle: toggleSavedOutfitAction,
+                    }
+              }
+            />
           ))}
         </div>
       </section>

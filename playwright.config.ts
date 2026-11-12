@@ -10,6 +10,16 @@ import { defineConfig, devices } from '@playwright/test'
 // overridden the moment Next re-parses `.env`. The script makes `.env`
 // genuinely absent for the life of the server, which is the only
 // mechanism that reliably forces the deterministic fallback path.
+//
+// `e2e/closet.spec.ts` runs against this same single webServer and is
+// gated by `hasServiceRoleEnv()` (`src/lib/supabase/test-env.ts`): the
+// script above only moves the `.env` *file*, not variables already
+// exported in the invoking shell, so a run with real Supabase credentials
+// exported (not merely present in `.env`) still boots this server with
+// Supabase configured and the AI key genuinely absent — exactly what that
+// spec's first scenario needs (a real session, labelling forced onto its
+// deterministic fallback). With no credentials exported, that spec skips
+// cleanly and this file's own `demo-path.spec.ts` is unaffected either way.
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,

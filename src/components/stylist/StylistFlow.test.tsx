@@ -64,6 +64,7 @@ const resultLine = {
     },
   ],
   items: [],
+  closetItems: [],
   providerId: 'gemini' as const,
   degraded: false,
   degradedReason: null,
@@ -193,5 +194,19 @@ describe('StylistFlow', () => {
     expect(screen.queryByTestId('stylist-pending')).not.toBeInTheDocument()
 
     close()
+  })
+
+  // Task 12: `StylistFlow` doesn't own the prefill logic (that's
+  // `Questionnaire`'s, tested in isolation there) — it only has to pass
+  // `initialAnswers` straight through, which is the one thing this test
+  // actually checks.
+  it('chuyển initialAnswers thẳng vào Questionnaire', () => {
+    render(
+      <StylistFlow
+        avoidOptions={[]}
+        initialAnswers={{ occasions: ['work'], fitPreference: 'fitted', avoids: [], goal: 'style' }}
+      />,
+    )
+    expect(screen.getByLabelText('Đi làm')).toBeChecked()
   })
 })
