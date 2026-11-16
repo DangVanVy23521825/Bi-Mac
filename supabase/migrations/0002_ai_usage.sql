@@ -102,7 +102,15 @@ begin
 end;
 $$;
 
-revoke all on function public.increment_ai_usage(uuid, date) from public;
+-- `from public, anon, authenticated` — không chỉ `public`. Supabase chạy
+-- `alter default privileges ... grant all on functions to anon, authenticated,
+-- service_role`, nên một hàm vừa tạo ra trong schema `public` có EXECUTE được
+-- grant **trực tiếp** cho `anon`, song song với grant ngầm cho PUBLIC mà
+-- PostgreSQL tự thêm. Thu hồi riêng `public` chỉ bỏ cái ngầm; cái trực tiếp
+-- sống sót, và `anon` vẫn gọi được hàm. Đó đúng là cùng một cái bẫy mà dòng
+-- `revoke all on table ... from public, anon, authenticated` ở trên đã tránh
+-- cho bảng — quyền phải nêu tên từng role, không dựa vào PUBLIC.
+revoke all on function public.increment_ai_usage(uuid, date) from public, anon, authenticated;
 
 grant execute on function public.increment_ai_usage(uuid, date) to authenticated;
 

@@ -88,7 +88,15 @@ $$;
 -- revoke-rồi-grant để file này một mình cũng đủ mô tả trạng thái cuối —
 -- cùng kỷ luật "revoke trước, grant sau" của `0001`/`0002`, vì quyền là
 -- cộng dồn chứ không phải thay thế.
-revoke all on function public.increment_ai_usage(uuid, date) from public;
+-- `from public, anon, authenticated`, cùng lý do như `0002`: Supabase grant
+-- EXECUTE trực tiếp cho `anon` qua default privileges, nên thu hồi riêng
+-- `public` để lại grant trực tiếp đó. Giờ hàm là `security definer`, bỏ sót
+-- `anon` ở đây còn tệ hơn ở `0002`: definer bỏ qua RLS, nên một khách chưa
+-- đăng nhập gọi được hàm sẽ ghi được vào bảng mà không policy nào chặn —
+-- chỉ còn lời kiểm `auth.uid()` bên trong hàm đứng giữa, và với `anon` thì
+-- `auth.uid()` là null nên nó cũng chặn, nhưng dựa vào đúng một lớp là sai
+-- kỷ luật của chính file này.
+revoke all on function public.increment_ai_usage(uuid, date) from public, anon, authenticated;
 
 grant execute on function public.increment_ai_usage(uuid, date) to authenticated;
 

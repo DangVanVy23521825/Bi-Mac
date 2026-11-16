@@ -112,9 +112,17 @@ describe(MIGRATION_PATH_0002, () => {
     expect(revokeAt).toBeGreaterThan(-1)
     expect(grantAt).toBeGreaterThan(-1)
     expect(revokeAt).toBeLessThan(grantAt)
-    expect(sql0002.slice(revokeAt, sql0002.indexOf(';', revokeAt))).toContain(
-      'public.increment_ai_usage',
-    )
+    const revokeStatement = sql0002.slice(revokeAt, sql0002.indexOf(';', revokeAt))
+    expect(revokeStatement).toContain('public.increment_ai_usage')
+    // Nêu tên từng role, không chỉ `public`. Đây là bug thật đã xảy ra: bản
+    // đầu chỉ `from public`, và `0002` tự dừng ngay lúc áp lên database thật
+    // vì `anon` vẫn gọi được hàm — Supabase grant EXECUTE trực tiếp cho
+    // `anon` qua default privileges, nên thu hồi riêng PUBLIC không đủ.
+    // Guard bảng ở trên đã lặp qua role từ đầu; guard hàm thì sót, nên lỗi
+    // lọt qua CI và chỉ lộ ra khi có database.
+    for (const role of ['public', 'anon', 'authenticated']) {
+      expect(revokeStatement).toContain(role)
+    }
   })
 
   it('tự khẳng định anon không gọi được increment_ai_usage, authenticated vẫn gọi được, lúc áp migration', () => {
@@ -213,5 +221,13 @@ describe(MIGRATION_PATH_0003, () => {
     expect(grantAt).toBeGreaterThan(revokeAt)
     expect(sql0003).toContain("'public.increment_ai_usage(uuid, date)'")
     expect(sql0003).toContain('has_function_privilege')
+
+    // Cùng lý do như `0002`, và ở đây nghiêm hơn: hàm là `security definer`
+    // nên nó bỏ qua RLS, `anon` gọi được là ghi được mà không policy nào
+    // chặn.
+    const revokeStatement = sql0003.slice(revokeAt, sql0003.indexOf(';', revokeAt))
+    for (const role of ['public', 'anon', 'authenticated']) {
+      expect(revokeStatement).toContain(role)
+    }
   })
 })
