@@ -40,7 +40,7 @@ import type { StylistAnswers } from '@/types/stylist'
 const DEFAULT_TIMEOUT_MS = 25_000
 
 const EMPTY_ANALYSIS_NOTE =
-  'Bí Mặc chưa thể phân tích thêm từ thông tin hiện tại — bạn vẫn có thể khám phá outfit và style gợi ý dưới đây.'
+  'Bí Box chưa thể phân tích thêm từ thông tin hiện tại — bạn vẫn có thể khám phá outfit và style gợi ý dưới đây.'
 
 const NO_OUTFITS_NOTE =
   'Những tiêu chí cần tránh đã thu hẹp danh sách outfit quá nhiều nên hiện chưa có outfit nào phù hợp — hãy khám phá theo style ở trên hoặc nới bớt tiêu chí tránh để xem thêm gợi ý.'

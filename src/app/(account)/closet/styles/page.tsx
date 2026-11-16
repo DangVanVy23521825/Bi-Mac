@@ -1,4 +1,4 @@
-// `/closet/styles` — những style của Bí Mặc mà người dùng đã lưu, từ nút
+// `/closet/styles` — những style của Bí Box mà người dùng đã lưu, từ nút
 // lưu trên trang `/styles/[slug]`. Cùng ranh giới `(account)` (ADR-021)
 // với `/closet/items` và `/closet/looks`.
 //
@@ -28,7 +28,7 @@ export default async function SavedStylesPage() {
           <Link href="/styles" className="underline underline-offset-4 hover:text-accent">
             năm hướng style
           </Link>{' '}
-          của Bí Mặc và lưu lại hướng hợp với bạn.
+          của Bí Box và lưu lại hướng hợp với bạn.
         </p>
       ) : (
         <div className="mt-8 space-y-16">

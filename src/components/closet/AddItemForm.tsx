@@ -37,7 +37,7 @@ function isAllowedPhotoType(value: string): value is (typeof ALLOWED_PHOTO_TYPES
 // byte nào rời khỏi trình duyệt, theo đúng quyết định #1.
 function describePhotoRejection(file: File): string | undefined {
   if (!isAllowedPhotoType(file.type)) {
-    return `Bí Mặc chưa đọc được loại ảnh này${file.type ? ` (${file.type})` : ''}. Hãy chọn ảnh JPEG, PNG hoặc WebP.`
+    return `Bí Box chưa đọc được loại ảnh này${file.type ? ` (${file.type})` : ''}. Hãy chọn ảnh JPEG, PNG hoặc WebP.`
   }
   if (file.size > MAX_PHOTO_BYTES) {
     return `Ảnh đang lớn hơn ${MAX_PHOTO_MB}MB cho phép. Hãy chọn một ảnh nhỏ hơn.`
@@ -244,7 +244,7 @@ export function AddItemForm({ userId, onCreate }: Props) {
 
       {degraded && (
         <p className="font-body text-sm text-accent-soft">
-          Bí Mặc chưa tự gắn nhãn được cho ảnh này — bạn tự điền giúp các nhãn dưới đây nhé, chỉ mất chút thời gian.
+          Bí Box chưa tự gắn nhãn được cho ảnh này — bạn tự điền giúp các nhãn dưới đây nhé, chỉ mất chút thời gian.
         </p>
       )}
 

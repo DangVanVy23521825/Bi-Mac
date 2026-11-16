@@ -19,7 +19,7 @@ const ENTRY_POINTS = [
   },
   {
     href: '/stylist',
-    title: 'Để Bí Mặc gợi ý riêng',
+    title: 'Để Bí Box gợi ý riêng',
     body: 'Trả lời bốn câu hỏi, nhận outfit cụ thể kèm lý do vì sao nó hợp với bạn.',
     linkLabel: 'Bắt đầu phối đồ',
   },
@@ -28,9 +28,9 @@ const ENTRY_POINTS = [
 export function StartHere() {
   return (
     <section className="mx-auto max-w-6xl px-6 py-16">
-      <SectionHeading eyebrow="Start here" title="Ba cách dùng Bí Mặc" />
+      <SectionHeading eyebrow="Start here" title="Ba cách dùng Bí Box" />
       <p className="-mt-4 mb-12 max-w-xl font-body text-base text-accent-soft">
-        Bí Mặc không bán quần áo. Bí Mặc giúp bạn hiểu để mặc đẹp hơn với những gì
+        Bí Box không bán quần áo. Bí Box giúp bạn hiểu để mặc đẹp hơn với những gì
         đang có trong tủ.
       </p>
 

@@ -1,4 +1,4 @@
-// `/closet/looks` — những look (outfit) của Bí Mặc mà người dùng đã lưu.
+// `/closet/looks` — những look (outfit) của Bí Box mà người dùng đã lưu.
 // Trong route group `(account)` (ADR-021) nên nhánh signed-out/unconfigured
 // đã được `layout.tsx` xử lý ở phía trên; trang chỉ cần lo phần của người
 // đã đăng nhập, nhưng vẫn tự gọi `requireUserId()` — gate của layout chỉ

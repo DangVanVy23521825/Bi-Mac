@@ -7,7 +7,7 @@ describe('trang chủ', () => {
     render(await Home())
 
     for (const heading of [
-      'Ba cách dùng Bí Mặc',
+      'Ba cách dùng Bí Box',
       'Đang được mặc nhiều',
       'Bảng màu của mùa',
       'Những món làm nền cho tủ đồ',
@@ -40,7 +40,7 @@ describe('trang chủ', () => {
     expect(screen.getByRole('link', { name: 'Vào tủ đồ' })).toHaveAttribute('href', '/wardrobe')
   })
 
-  it('khối "Ba cách dùng Bí Mặc" mở đủ ba lối vào', async () => {
+  it('khối "Ba cách dùng Bí Box" mở đủ ba lối vào', async () => {
     render(await Home())
     expect(screen.getByRole('link', { name: 'Mở tủ đồ' })).toHaveAttribute('href', '/wardrobe')
     expect(screen.getByRole('link', { name: 'Xem các hướng style' })).toHaveAttribute(

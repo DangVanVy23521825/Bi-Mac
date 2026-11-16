@@ -20,7 +20,7 @@ export default async function AccountPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <SectionHeading eyebrow="Tài khoản" title="Rời khỏi Bí Mặc" />
+      <SectionHeading eyebrow="Tài khoản" title="Rời khỏi Bí Box" />
       <DeleteAccountPanel />
     </div>
   )

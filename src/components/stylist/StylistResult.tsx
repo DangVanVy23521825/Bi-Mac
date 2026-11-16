@@ -43,8 +43,8 @@ function DegradedBanner({ degraded }: { degraded: boolean }) {
       role="status"
       className="border border-muted/40 bg-muted/35 px-4 py-3 font-body text-sm text-accent-soft"
     >
-      Đây là gợi ý từ chế độ dự phòng của Bí Mặc (không gọi được AI lúc này) — vẫn lấy từ đúng
-      những món Bí Mặc đang có, nhưng phần giải thích có thể đơn giản hơn bình thường.
+      Đây là gợi ý từ chế độ dự phòng của Bí Box (không gọi được AI lúc này) — vẫn lấy từ đúng
+      những món Bí Box đang có, nhưng phần giải thích có thể đơn giản hơn bình thường.
     </p>
   )
 }
@@ -217,13 +217,35 @@ function ClosetItemsSection({ items }: { items: ClosetItemEntry[] }) {
     <section className="space-y-6">
       <h2 className="font-display text-2xl">Món trong tủ bạn dùng được</h2>
       <p className="font-body text-sm text-accent-soft">
-        Đây là đồ của chính bạn trong Tủ đồ của tôi — không phải sản phẩm của Bí Mặc.
+        Đây là đồ của chính bạn trong Tủ đồ của tôi — không phải sản phẩm của Bí Box.
       </p>
       <ul className="space-y-4">
         {items.map((item: ClosetItemEntry) => (
           <li key={item.id} className="border-t border-muted/40 pt-4">
             <div className="grid gap-4 sm:grid-cols-[6rem_1fr] sm:items-start">
-              <EditorialImage src={item.image} alt={item.name} ratio="look" />
+              {/*
+                `<img>` thường chứ không phải `EditorialImage`/`next/image`,
+                cùng quyết định `ClosetItemCard` đã ghi ở Task 7: đây là
+                signed URL của bucket private, hết hạn sau ít phút và mang
+                token, nên `next/image` cache theo URL kèm token — lần render
+                nào cũng miss, tốn một vòng loader vô ích. Và vì host
+                Supabase không nằm trong `images.remotePatterns`,
+                `next/image` còn ném ngay ở loader và làm sập cả trang kết
+                quả. Ảnh catalog ở các mục trên vẫn dùng `EditorialImage`:
+                chúng là asset tĩnh, đúng thứ `next/image` sinh ra để tối ưu.
+              */}
+              <div className="aspect-[4/5] w-full overflow-hidden bg-muted/35">
+                {item.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div aria-hidden="true" className="h-full w-full" />
+                )}
+              </div>
               <div>
                 <p className="font-display text-lg">{item.name}</p>
                 {item.note && (

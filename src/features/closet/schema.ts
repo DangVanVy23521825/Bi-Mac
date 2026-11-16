@@ -51,12 +51,12 @@ export const closetItemDraftSchema: z.ZodType<ClosetItemDraft> = z.object({
   colorSlugs: z
     .array(z.string())
     .refine((slugs) => slugs.every((slug) => colorSlugSet.has(slug)), {
-      error: 'Có màu không nằm trong danh mục màu của Bí Mặc',
+      error: 'Có màu không nằm trong danh mục màu của Bí Box',
     }),
   styleSlugs: z
     .array(z.string())
     .refine((slugs) => slugs.every((slug) => styleSlugSet.has(slug)), {
-      error: 'Có phong cách không nằm trong danh mục style của Bí Mặc',
+      error: 'Có phong cách không nằm trong danh mục style của Bí Box',
     }),
   occasions: z.array(z.enum(OCCASIONS, { error: 'Dịp không hợp lệ' })),
   fit: z.enum(fitValues, { error: 'Dáng không hợp lệ' }).nullable(),

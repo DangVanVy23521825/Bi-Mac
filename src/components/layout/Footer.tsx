@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { APP_NAME, APP_TAGLINE } from '@/lib/brand'
 import { NAV } from './nav'
 
 export function Footer() {
@@ -6,9 +7,12 @@ export function Footer() {
     <footer className="mt-24 border-t border-muted/40 px-6 py-14">
       <div className="mx-auto flex max-w-6xl flex-col gap-10 sm:flex-row sm:justify-between">
         <div className="max-w-xs">
-          <p className="font-display text-2xl font-semibold">Bí Mặc</p>
+          <p className="font-display text-2xl font-semibold">{APP_NAME}</p>
+          <p className="mt-1 font-body text-xs uppercase tracking-[0.14em] text-accent-soft">
+            {APP_TAGLINE}
+          </p>
           <p className="mt-3 font-body text-sm text-accent-soft">
-            Hiểu để mặc đẹp — từ điển thời trang và cách phối đồ cho phụ nữ Việt.
+            Từ điển thời trang và cách phối đồ cho phụ nữ Việt.
           </p>
         </div>
 
@@ -26,7 +30,7 @@ export function Footer() {
       </div>
 
       <p className="mx-auto mt-12 max-w-6xl font-body text-xs text-accent-soft">
-        Hình ảnh trên Bí Mặc được tạo bằng AI phục vụ mục đích trình bày sản phẩm.
+        Hình ảnh trên {APP_NAME} được tạo bằng AI phục vụ mục đích trình bày sản phẩm.
       </p>
     </footer>
   )

@@ -26,7 +26,7 @@ export default async function StylistPage() {
     <div className="mx-auto max-w-3xl px-6 py-16">
       <SectionHeading eyebrow="AI phối đồ" title="Gợi ý phối đồ cho riêng bạn" />
       <p className="font-body text-base text-accent-soft">
-        Bạn trả lời vài câu về dịp mặc, dáng áo bạn thích và những thứ bạn muốn tránh. Bí Mặc
+        Bạn trả lời vài câu về dịp mặc, dáng áo bạn thích và những thứ bạn muốn tránh. Bí Box
         gợi ý hướng style, bảng màu và các outfit cụ thể lấy từ tủ đồ của trang — kèm lý do vì
         sao chúng hợp với bạn.
       </p>

@@ -1,4 +1,4 @@
-# Bí Mặc
+# Bí Box - Trợ lí phối đồ AI
 
 Nền tảng kiến thức thời trang và gợi ý phối đồ cho phụ nữ Việt.
 

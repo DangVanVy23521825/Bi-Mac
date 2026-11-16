@@ -109,8 +109,8 @@ describe('Questionnaire', () => {
   // Trước fix, ô chọn ảnh là `<input type="file">` trần: Tailwind preflight
   // xoá viền/padding của `::file-selector-button` nên nút "Chọn tệp" render
   // thành chữ đen trơn, không ai nhận ra là nút bấm. Nút thật bây giờ là
-  // một `<label>` có chữ của Bí Mặc, trỏ vào input bị ẩn khỏi mắt thường.
-  it('nút chọn ảnh là một control bấm được, có chữ của Bí Mặc', () => {
+  // một `<label>` có chữ của Bí Box, trỏ vào input bị ẩn khỏi mắt thường.
+  it('nút chọn ảnh là một control bấm được, có chữ của Bí Box', () => {
     render(<Questionnaire avoidOptions={[]} onSubmit={vi.fn()} pending={false} />)
     const input = screen.getByLabelText(/Thêm một ảnh/i)
     expect(input).toHaveAttribute('type', 'file')

@@ -228,7 +228,7 @@ describe.skipIf(!hasServiceRoleEnv())('RLS trên project Supabase thật', () =>
   it.skipIf(!hasServiceRoleEnv())(
     'khách chưa đăng nhập không đọc được bảng nào',
     async () => {
-      // Năm bảng này không có gì công khai. Trang công khai của Bí Mặc đọc
+      // Năm bảng này không có gì công khai. Trang công khai của Bí Box đọc
       // fixtures, không đọc database, nên role `anon` không cần quyền nào —
       // và policy nào cũng `to authenticated` nên không có policy nào khớp.
       // `data` rỗng dù vì `permission denied` (revoke ở mức bảng) hay vì 0

@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng AI phối đồ
 
-AI phối đồ trên Bí Mặc gợi ý hướng style, bảng màu và outfit từ **tủ đồ của trang**, dựa trên vài câu bạn trả lời. Đây không phải chatbot chat tự do, cũng không phải chỗ mua đồ.
+AI phối đồ trên Bí Box gợi ý hướng style, bảng màu và outfit từ **tủ đồ của trang**, dựa trên vài câu bạn trả lời. Đây không phải chatbot chat tự do, cũng không phải chỗ mua đồ.
 
 Mở trang: [bi-mac.vercel.app/stylist](https://bi-mac.vercel.app/stylist)  
 Trên site: **AI phối đồ** trên thanh điều hướng.
@@ -9,14 +9,14 @@ Trên site: **AI phối đồ** trên thanh điều hướng.
 
 ## AI phối đồ làm gì
 
-Bạn chọn dịp mặc, dáng áo ưa thích, những thứ muốn tránh, và mục tiêu lần này. Có thể thêm một ảnh (không bắt buộc). Bí Mặc trả về:
+Bạn chọn dịp mặc, dáng áo ưa thích, những thứ muốn tránh, và mục tiêu lần này. Có thể thêm một ảnh (không bắt buộc). Bí Box trả về:
 
 - hướng style hợp với bạn
 - bảng màu nên thử
 - outfit cụ thể, kèm lý do
 - vài món nên có trong tủ đồ
 
-Mỗi gợi ý dẫn sang trang món hoặc style thật trên Bí Mặc. Kết quả là gợi ý biên tập, không phải đo “bao nhiêu phần trăm hợp với bạn”.
+Mỗi gợi ý dẫn sang trang món hoặc style thật trên Bí Box. Kết quả là gợi ý biên tập, không phải đo “bao nhiêu phần trăm hợp với bạn”.
 
 ---
 
@@ -47,7 +47,7 @@ Chọn một:
 - Ôm vừa dáng
 - Rộng vừa phải
 - Rộng thùng, oversized
-- Chưa chắc — để Bí Mặc không ép một kiểu ôm/rộng
+- Chưa chắc — để Bí Box không ép một kiểu ôm/rộng
 
 ### 4. Đánh dấu những thứ muốn tránh (tuỳ chọn)
 
@@ -85,9 +85,9 @@ Không cần ảnh để nhận gợi ý. Nếu thêm:
 2. Dung lượng tối đa **4MB**.
 3. Có thể **Bỏ ảnh** trước khi gửi.
 
-Ảnh iPhone thường là **HEIC** — Bí Mặc chưa đọc được. Xuất lại JPEG/PNG trong Ảnh, hoặc chọn *Most Compatible* khi chụp.
+Ảnh iPhone thường là **HEIC** — Bí Box chưa đọc được. Xuất lại JPEG/PNG trong Ảnh, hoặc chọn *Most Compatible* khi chụp.
 
-Ảnh được gửi tới Google chỉ để phân tích **lần này**, rồi bỏ. Không lưu trên Bí Mặc, không đưa vào Tủ đồ của tôi.
+Ảnh được gửi tới Google chỉ để phân tích **lần này**, rồi bỏ. Không lưu trên Bí Box, không đưa vào Tủ đồ của tôi.
 
 ### 7. Xem gợi ý
 
@@ -116,7 +116,7 @@ Mỗi hướng có tên (bấm sang trang style), mức khớp chữ (không ph�
 
 ### Bảng màu nên thử
 
-Màu lấy từ bảng màu Bí Mặc, kèm chấm màu và lý do ngắn.
+Màu lấy từ bảng màu Bí Box, kèm chấm màu và lý do ngắn.
 
 ### Outfit gợi ý
 
@@ -136,7 +136,7 @@ Vài câu bổ sung (nếu có) nằm phía trên các khối.
 
 Nếu không gọi được AI (hết hạn mức, lỗi, timeout, hoặc chưa cấu hình khóa), trang vẫn trả gợi ý từ catalog, kèm dòng:
 
-> Đây là gợi ý từ chế độ dự phòng của Bí Mặc (không gọi được AI lúc này) — vẫn lấy từ đúng những món Bí Mặc đang có, nhưng phần giải thích có thể đơn giản hơn bình thường.
+> Đây là gợi ý từ chế độ dự phòng của Bí Box (không gọi được AI lúc này) — vẫn lấy từ đúng những món Bí Box đang có, nhưng phần giải thích có thể đơn giản hơn bình thường.
 
 Vẫn là món thật trên site; chỉ phần diễn giải có thể ngắn hơn.
 
@@ -159,7 +159,7 @@ Nếu một khối kết quả trống, trang gợi **Khám phá theo style** ho
 
 - Không bắt buộc đăng nhập.
 - Ảnh không lưu sau lần phân tích.
-- Bí Mặc **không** đoán đặc điểm nhạy cảm từ ảnh, **không** chấm đẹp/xấu, **không** coi phân tích một tấm ảnh là “khoa học màu sắc theo mùa”.
+- Bí Box **không** đoán đặc điểm nhạy cảm từ ảnh, **không** chấm đẹp/xấu, **không** coi phân tích một tấm ảnh là “khoa học màu sắc theo mùa”.
 
 ---
 
@@ -168,7 +168,7 @@ Nếu một khối kết quả trống, trang gợi **Khám phá theo style** ho
 - Không bán hàng, không giỏ hàng.
 - **Tủ đồ của tôi** chưa lưu được look từ đây — xem xong thì mở link món/style, chưa có nút lưu.
 - Không chat hỏi đáp tự do; chỉ form + một lượt gợi ý.
-- Chỉ gợi từ catalog Bí Mặc hiện có, không bịa món ngoài tủ đồ trang.
+- Chỉ gợi từ catalog Bí Box hiện có, không bịa món ngoài tủ đồ trang.
 
 ---
 

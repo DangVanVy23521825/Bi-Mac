@@ -29,7 +29,7 @@ export function EditorialHero() {
       </div>
       <EditorialImage
         src="/images/hero/thu-2026.jpg"
-        alt="Số mùa thu của Bí Mặc"
+        alt="Số mùa thu của Bí Box"
         ratio="hero"
         priority
       />

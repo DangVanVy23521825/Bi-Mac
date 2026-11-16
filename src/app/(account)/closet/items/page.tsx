@@ -48,7 +48,7 @@ export default async function ClosetItemsPage() {
     <div className="mx-auto max-w-5xl px-6 py-16">
       <SectionHeading eyebrow="Tủ đồ của tôi" title="Thêm một món đồ" />
       <p className="max-w-xl font-body text-base text-accent-soft">
-        Chụp hoặc chọn một ảnh — Bí Mặc đọc ảnh và điền sẵn tên, loại, màu và phong cách.
+        Chụp hoặc chọn một ảnh — Bí Box đọc ảnh và điền sẵn tên, loại, màu và phong cách.
         Bạn chỉ cần lướt qua, sửa chỗ chưa đúng rồi lưu lại.
       </p>
       <div className="mt-8">
@@ -61,7 +61,7 @@ export default async function ClosetItemsPage() {
             <p className="font-display text-2xl">Chưa tải được tủ đồ của bạn</p>
             <p className="mx-auto mt-4 max-w-md font-body text-base text-accent-soft">
               Lần đọc này không thành — những món bạn đã lưu vẫn còn nguyên trong tủ. Tải lại
-              trang để Bí Mặc thử lần nữa nhé.
+              trang để Bí Box thử lần nữa nhé.
             </p>
           </div>
         ) : items.length === 0 ? (

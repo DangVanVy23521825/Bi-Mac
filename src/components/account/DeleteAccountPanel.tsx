@@ -94,7 +94,7 @@ export function DeleteAccountPanel() {
     return (
       <div className="max-w-xl space-y-6">
         <p className="font-body text-base text-accent-soft">
-          Bạn có thể rời khỏi Bí Mặc bất cứ lúc nào. Khi bạn xoá tài khoản, chúng tôi xoá thật:
+          Bạn có thể rời khỏi Bí Box bất cứ lúc nào. Khi bạn xoá tài khoản, chúng tôi xoá thật:
           toàn bộ ảnh quần áo bạn đã tải lên, những món và look bạn đã lưu, cùng mọi câu trả lời
           bạn từng đưa cho AI phối đồ. Chúng tôi không giữ lại bản sao nào để dùng về sau.
         </p>

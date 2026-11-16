@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import type { AuthState } from '@/features/account/guard'
 import { AuthMenu } from './AuthMenu'
 import { MobileNavigation } from './MobileNavigation'
+import { APP_NAME, APP_TITLE } from '@/lib/brand'
 import { NAV, isActive } from './nav'
 
 type SiteHeaderProps = {
@@ -17,8 +18,12 @@ export function SiteHeader({ authState }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-muted/40 bg-background/95 backdrop-blur-none">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="font-display text-2xl font-semibold tracking-tight">
-          Bí Mặc
+        <Link
+          href="/"
+          aria-label={APP_TITLE}
+          className="font-display text-2xl font-semibold tracking-tight"
+        >
+          {APP_NAME}
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">

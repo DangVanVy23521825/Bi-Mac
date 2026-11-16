@@ -71,7 +71,7 @@ function isAllowedPhotoType(value: string): value is (typeof ALLOWED_PHOTO_TYPES
 // an ordinary 5MB phone photo should never read like a flaky network.
 function describePhotoRejection(file: File): string | undefined {
   if (!isAllowedPhotoType(file.type)) {
-    return `Bí Mặc chưa đọc được loại ảnh này${file.type ? ` (${file.type})` : ''}. Hãy chọn ảnh JPEG, PNG hoặc WebP — nhiều điện thoại lưu ảnh ở định dạng khác (ví dụ HEIC) nên có thể cần đổi định dạng trước khi tải lên.`
+    return `Bí Box chưa đọc được loại ảnh này${file.type ? ` (${file.type})` : ''}. Hãy chọn ảnh JPEG, PNG hoặc WebP — nhiều điện thoại lưu ảnh ở định dạng khác (ví dụ HEIC) nên có thể cần đổi định dạng trước khi tải lên.`
   }
   if (file.size > MAX_PHOTO_BYTES) {
     return `Ảnh đang lớn hơn ${MAX_PHOTO_MB}MB cho phép. Hãy chọn một ảnh nhỏ hơn, hoặc chụp/xuất lại ở độ phân giải thấp hơn trước khi tải lên.`
@@ -303,14 +303,14 @@ export function Questionnaire({ avoidOptions, onSubmit, pending, initialAnswers 
       <fieldset className="space-y-4 border-t border-muted/40 pt-8">
         <legend className="font-display text-xl">Ảnh (tuỳ chọn)</legend>
         <p className="max-w-xl font-body text-sm text-accent-soft">
-          Một ảnh chụp cả người giúp Bí Mặc đọc thêm dáng và tông màu bạn hay mặc. Bỏ qua
+          Một ảnh chụp cả người giúp Bí Box đọc thêm dáng và tông màu bạn hay mặc. Bỏ qua
           vẫn có gợi ý đầy đủ.
         </p>
 
         {/* Input thật bị ẩn khỏi mắt thường chứ không bị tắt: nó vẫn nhận
             focus bàn phím, vẫn là thứ trình đọc màn hình đọc được, và vẫn
             là nơi `handlePhotoChange` gắn vào. Cái nhìn thấy là `<label>`
-            ngay sau nó — nhờ vậy chữ trên nút là chữ tiếng Việt của Bí Mặc
+            ngay sau nó — nhờ vậy chữ trên nút là chữ tiếng Việt của Bí Box
             thay vì chữ "Chọn tệp" do trình duyệt tự đặt theo locale, thứ
             không style được. `peer` cần input là anh em ruột liền kề của
             label nên hai thẻ phải nằm cùng một div. */}

@@ -48,11 +48,11 @@ describe('toggleSavedItemAction', () => {
   })
 
   it('toggleSavedItem ném lỗi (slug không có trong catalog) thì trả ok:false kèm đúng message, không nuốt lỗi thành generic', async () => {
-    toggleSavedItem.mockRejectedValue(new Error('Món đồ này không còn trong catalog của Bí Mặc.'))
+    toggleSavedItem.mockRejectedValue(new Error('Món đồ này không còn trong catalog của Bí Box.'))
 
     const result = await toggleSavedItemAction('khong-ton-tai')
 
-    expect(result).toEqual({ ok: false, error: 'Món đồ này không còn trong catalog của Bí Mặc.' })
+    expect(result).toEqual({ ok: false, error: 'Món đồ này không còn trong catalog của Bí Box.' })
   })
 
   it('Supabase chưa cấu hình thì báo lỗi, không gọi toggleSavedItem', async () => {
@@ -114,11 +114,11 @@ describe('toggleSavedOutfitAction', () => {
   })
 
   it('toggleSavedOutfit ném lỗi thì trả ok:false kèm đúng message', async () => {
-    toggleSavedOutfit.mockRejectedValue(new Error('Look này không còn trong catalog của Bí Mặc.'))
+    toggleSavedOutfit.mockRejectedValue(new Error('Look này không còn trong catalog của Bí Box.'))
 
     const result = await toggleSavedOutfitAction('khong-ton-tai')
 
-    expect(result).toEqual({ ok: false, error: 'Look này không còn trong catalog của Bí Mặc.' })
+    expect(result).toEqual({ ok: false, error: 'Look này không còn trong catalog của Bí Box.' })
   })
 
   it('Supabase chưa cấu hình thì báo lỗi, không gọi toggleSavedOutfit', async () => {

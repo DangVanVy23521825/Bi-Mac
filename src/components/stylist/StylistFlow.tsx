@@ -53,9 +53,9 @@ function errorKindForStatus(status: number): ErrorKind {
 
 const ERROR_COPY: Record<ErrorKind, string> = {
   'photo-too-large':
-    'Ảnh bạn gửi đang lớn hơn dung lượng Bí Mặc nhận được. Hãy chọn một ảnh nhỏ hơn, hoặc nén/chụp lại ở độ phân giải thấp hơn, rồi gửi lại câu hỏi.',
+    'Ảnh bạn gửi đang lớn hơn dung lượng Bí Box nhận được. Hãy chọn một ảnh nhỏ hơn, hoặc nén/chụp lại ở độ phân giải thấp hơn, rồi gửi lại câu hỏi.',
   'photo-type-unsupported':
-    'Bí Mặc chưa đọc được định dạng ảnh bạn vừa chọn. Hãy đổi sang ảnh JPEG, PNG hoặc WebP rồi gửi lại.',
+    'Bí Box chưa đọc được định dạng ảnh bạn vừa chọn. Hãy đổi sang ảnh JPEG, PNG hoặc WebP rồi gửi lại.',
   network:
     'Không gửi được yêu cầu lúc này — có thể do mạng chập chờn. Bạn có thể thử lại.',
 }
@@ -125,7 +125,7 @@ function PendingState() {
   return (
     <div data-testid="stylist-pending" className="space-y-10">
       <p role="status" className="font-body text-sm text-accent-soft">
-        Bí Mặc đang đọc câu trả lời của bạn và chọn trong tủ đồ — thường mất khoảng 15 đến 20 giây.
+        Bí Box đang đọc câu trả lời của bạn và chọn trong tủ đồ — thường mất khoảng 15 đến 20 giây.
       </p>
 
       <section className="space-y-4">
@@ -158,7 +158,7 @@ function PartialAnalysis({ analysis }: { analysis: AnalysisStage }) {
     <div className="space-y-10">
       {analysis.degraded && (
         <p role="status" className="border border-muted/40 bg-muted/35 px-4 py-3 font-body text-sm text-accent-soft">
-          Đây là gợi ý từ chế độ dự phòng của Bí Mặc (không gọi được AI lúc này).
+          Đây là gợi ý từ chế độ dự phòng của Bí Box (không gọi được AI lúc này).
         </p>
       )}
 

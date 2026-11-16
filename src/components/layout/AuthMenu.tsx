@@ -1,7 +1,7 @@
 'use client'
 
 // The one sign-in control in the app. Deliberately quiet and typographic
-// (docs/06_DESIGN_SYSTEM.md: Bí Mặc is editorial, not a SaaS dashboard) —
+// (docs/06_DESIGN_SYSTEM.md: Bí Box is editorial, not a SaaS dashboard) —
 // a pill button or a loud CTA here is exactly what drags the header
 // toward looking like a product console.
 //

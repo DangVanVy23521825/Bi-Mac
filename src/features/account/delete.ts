@@ -1,4 +1,4 @@
-// Xoá tài khoản — đường ra khỏi Bí Mặc, và nó phải là xoá thật.
+// Xoá tài khoản — đường ra khỏi Bí Box, và nó phải là xoá thật.
 //
 // Người đã upload bốn mươi tấm ảnh quần áo của chính mình phải rời đi được
 // và dữ liệu đó thật sự biến mất: mọi hàng trong `profiles`, `closet_items`,

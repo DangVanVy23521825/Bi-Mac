@@ -1,4 +1,4 @@
-// `saved_items`/`saved_outfits`/`saved_styles` repository — the Bí Mặc
+// `saved_items`/`saved_outfits`/`saved_styles` repository — the Bí Box
 // catalog things a user has bookmarked, as opposed to `repository.ts`'s
 // `closet_items` (the user's own photographed wardrobe, Task 7).
 //
@@ -87,7 +87,7 @@ export async function toggleSavedItem(client: SupabaseClient, userId: string, it
     userId,
     itemSlug,
     existsInCatalog,
-    'Món đồ này không còn trong catalog của Bí Mặc.',
+    'Món đồ này không còn trong catalog của Bí Box.',
   )
 }
 
@@ -100,7 +100,7 @@ export async function toggleSavedStyle(client: SupabaseClient, userId: string, s
     userId,
     styleSlug,
     existsInCatalog,
-    'Style này không còn trong catalog của Bí Mặc.',
+    'Style này không còn trong catalog của Bí Box.',
   )
 }
 
@@ -113,7 +113,7 @@ export async function toggleSavedOutfit(client: SupabaseClient, userId: string, 
     userId,
     outfitSlug,
     existsInCatalog,
-    'Look này không còn trong catalog của Bí Mặc.',
+    'Look này không còn trong catalog của Bí Box.',
   )
 }
 

@@ -3,7 +3,7 @@ import { SectionHeading } from '@/components/ui/SectionHeading'
 
 // `/closet` vẫn là trang tổng cho mọi nội dung đã lưu. Phần tủ đồ của
 // riêng người dùng (thêm/sửa nhãn/xoá món) sống ở `/closet/items` (Task 7);
-// phần món/look/style của Bí Mặc mà người dùng đã lưu theo slug sống ở hai
+// phần món/look/style của Bí Box mà người dùng đã lưu theo slug sống ở hai
 // route anh em `/closet/looks` và `/closet/styles` (Task 8). Cả ba đều
 // trong cùng route group `(account)` nên kế thừa cùng một cổng đăng nhập.
 export default function ClosetPage() {
