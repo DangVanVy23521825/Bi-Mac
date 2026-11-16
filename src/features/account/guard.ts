@@ -66,10 +66,21 @@ export type AuthState =
 export async function getViewer(): Promise<{ authState: AuthState; userId: string | null }> {
   if (!isSupabaseConfigured()) return { authState: { status: 'unconfigured' }, userId: null }
 
-  const supabase = await createSupabaseServerClient()
-  if (!supabase) return { authState: { status: 'unconfigured' }, userId: null }
-
+  // `createSupabaseServerClient()` nằm TRONG `try` cùng `auth.getUser()`, chứ
+  // không ở ngoài: nó gọi `cookies()` của `next/headers`, và `cookies()` ném
+  // khi bị gọi ngoài phạm vi một request. Để nó ngoài `try` thì mọi lỗi ở đó
+  // thành trang vỡ thay vì trang "chưa đăng nhập" — đúng cái mà `catch` dưới
+  // đây tồn tại để tránh, chỉ là trượt một dòng.
+  //
+  // Chỗ này từng làm `styles.test.tsx` và `item-detail.test.tsx` fail: hai
+  // file đó gọi thẳng hàm page (không có request scope), nên chúng chỉ pass
+  // khi KHÔNG có biến Supabase — lúc đó `isSupabaseConfigured()` chặn trước.
+  // Nạp `.env.local` vào shell là suite đổi kết quả, điều mà một lập trình
+  // viên vừa dựng xong Supabase sẽ gặp ngay.
   try {
+    const supabase = await createSupabaseServerClient()
+    if (!supabase) return { authState: { status: 'unconfigured' }, userId: null }
+
     const { data } = await supabase.auth.getUser()
     const user = data.user
     if (!user) return { authState: { status: 'signed-out' }, userId: null }

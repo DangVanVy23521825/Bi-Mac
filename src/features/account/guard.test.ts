@@ -135,6 +135,31 @@ describe('getViewer', () => {
 
     expect(await getViewer()).toEqual({ authState: { status: 'signed-out' }, userId: null })
   })
+
+  // Lỗi thật đã xảy ra, phát hiện khi chạy suite với `.env.local` đã nạp:
+  // `createSupabaseServerClient()` gọi `cookies()` của `next/headers`, và
+  // `cookies()` ném khi ở ngoài phạm vi một request. Lời gọi đó từng nằm
+  // NGOÀI `try`, nên `styles.test.tsx` và `item-detail.test.tsx` — hai file
+  // gọi thẳng hàm page — chỉ pass khi KHÔNG có biến Supabase. Suite đổi kết
+  // quả theo môi trường của lập trình viên, đúng kiểu lỗi làm người ta mất
+  // niềm tin vào test.
+  it('createSupabaseServerClient() throw thì cũng đọc ra signed-out, không chỉ getUser()', async () => {
+    isSupabaseConfigured.mockReturnValue(true)
+    createSupabaseServerClient.mockRejectedValue(
+      new Error('`cookies` was called outside a request scope.'),
+    )
+
+    expect(await getViewer()).toEqual({ authState: { status: 'signed-out' }, userId: null })
+  })
+
+  it('getAuthState() thừa hưởng cùng hàng rào đó', async () => {
+    isSupabaseConfigured.mockReturnValue(true)
+    createSupabaseServerClient.mockRejectedValue(
+      new Error('`cookies` was called outside a request scope.'),
+    )
+
+    expect(await getAuthState()).toEqual({ status: 'signed-out' })
+  })
 })
 
 describe('requireUserId', () => {
