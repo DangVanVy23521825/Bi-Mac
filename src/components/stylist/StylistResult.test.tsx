@@ -131,6 +131,41 @@ describe('StylistResult', () => {
     expect(screen.queryByRole('link', { name: /Áo sơ mi trắng của tôi/ })).not.toBeInTheDocument()
   })
 
+  // Lỗi đã xảy ra thật, chỉ lộ ra khi chạy app với một tủ đồ có ảnh: mục
+  // này từng render qua `EditorialImage` (bọc `next/image`), và signed URL
+  // của bucket trỏ tới host Supabase không có trong `images.remotePatterns`
+  // — `next/image` ném ngay ở loader và làm **sập cả trang kết quả**, đúng
+  // tính năng mà cả milestone này hướng tới.
+  //
+  // Test cũ ngay trên không bắt được vì nó truyền `image: null`, nên
+  // `EditorialImage` không bao giờ nhận một URL thật.
+  //
+  // `ClosetItemCard` đã quyết đúng chuyện này từ Task 7 và ghi lý do tại
+  // chỗ: signed URL hết hạn sau ít phút và mang token, nên `next/image`
+  // cache theo URL kèm token — lần render nào cũng miss, tốn một vòng tối
+  // ưu vô ích. Mục này phải theo cùng quyết định đó.
+  it('render ảnh tủ đồ bằng <img> thường, không qua next/image', () => {
+    const signedUrl =
+      'https://example.supabase.co/storage/v1/object/sign/closet/u1/ao.jpg?token=abc123'
+
+    render(
+      <StylistResult
+        outcome={{
+          ...outcome,
+          closetItems: [
+            { id: 'closet-1', name: 'Áo cardigan của tôi', image: signedUrl, note: null },
+          ],
+        }}
+      />,
+    )
+
+    const img = screen.getByAltText('Áo cardigan của tôi')
+    expect(img.tagName).toBe('IMG')
+    // `next/image` viết lại src thành `/_next/image?url=...`; một `<img>`
+    // thường giữ nguyên URL đã ký.
+    expect(img).toHaveAttribute('src', signedUrl)
+  })
+
   it('không hiện mục tủ đồ cá nhân khi tủ trống hoặc chưa đăng nhập', () => {
     render(<StylistResult outcome={outcome} />)
     expect(screen.queryByText('Món trong tủ bạn dùng được')).not.toBeInTheDocument()
