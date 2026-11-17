@@ -144,6 +144,18 @@ test.describe('tủ đồ cá nhân — luồng đã đăng nhập', () => {
     await expect(nameInput).toBeVisible({ timeout: NETWORK_TIMEOUT_MS })
     await nameInput.fill(itemName)
 
+    // Phải tự tick một dịp mặc, và đúng cái dịp sẽ hỏi ở bước sau.
+    // Bản nháp deterministic có `occasions: []`, mà `rankItems` lọc dịp
+    // mặc bằng *hard filter* chứ không phải trừ điểm (ADR-016): món không
+    // có dịp nào thì không bao giờ lọt vào `closetItems`, nên nhóm "món
+    // trong tủ" sẽ không render và test treo tới hết timeout.
+    //
+    // Đây là hành vi đúng của sản phẩm, không phải lỗi: một món chưa ai
+    // nói mặc dịp nào thì không nên được gợi ý cho dịp nào cả. Chỗ sai
+    // trước đây là bản thân test — nó lưu món với danh sách dịp rỗng rồi
+    // mong món đó xuất hiện khi hỏi "Đi làm".
+    await page.getByLabel('Đi làm').check()
+
     await page.getByRole('button', { name: 'Lưu vào tủ đồ' }).click()
     await expect(page.getByText(itemName)).toBeVisible({ timeout: NETWORK_TIMEOUT_MS })
 
